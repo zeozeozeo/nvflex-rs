@@ -26,6 +26,7 @@ fn main() {
         .expect("unable to write bindings");
 
     // link libraries
+    // TODO: we should also copy FleX dynamic libraries to the target directory
     link()
 }
 
@@ -61,6 +62,7 @@ fn link() {
     #[cfg(feature = "d3d")]
     {
         link_lib!("NvFlex{}D3D_x{}", VERSION, end);
+
         #[cfg(feature = "ext")]
         link_lib!("NvFlexExt{}D3D_x{}", VERSION, end);
     }
