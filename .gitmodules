@@ -1,0 +1,3 @@
+[submodule "nvflex-sys/FleX"]
+	path = nvflex-sys/FleX
+	url = https://github.com/zeozeozeo/FleX.git
