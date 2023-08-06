@@ -19,7 +19,7 @@ fn main() {
     #[cfg(feature = "ext")]
     let bindings = bindings.clang_arg("-DUSE_NV_EXT");
 
-    let bindings = bindings
+    bindings
         .generate()
         .expect("unable to generate bindings")
         .write_to_file(out_path.join("bindings.rs"))
