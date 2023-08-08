@@ -22,7 +22,10 @@ fn main() {
                 y: 0.0,
                 z: 0.0,
             },
-            make_phase(PhaseFlags::empty(), PhaseFlags::empty()),
+            make_phase(
+                PhaseFlags::Zero,
+                PhaseFlags::SelfCollide | PhaseFlags::Fluid,
+            ),
             true,
         );
 

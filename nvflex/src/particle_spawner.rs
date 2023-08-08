@@ -38,21 +38,49 @@ bitflags! {
         const ShapeChannel5 = 1 << 29;
         /// Particle will collide with shapes with channel 6 set (see `make_shape_flags()`).
         const ShapeChannel6 = 1 << 30;
+
+        /// Equal to zero.
+        const Zero = 0;
     }
 }
 
 /// Helper method to generates a phase with all shape channels set.
 ///
+/// # Arguments
+///
+/// * `group` - The index of the group for this particle, should be an integer < 2^20.
+/// * `particle_flags` - A combination of the phase flags which should be a combination of `PhaseFlags::SelfCollide`, `PhaseFlags::SelfCollideFilter`, and `PhaseFlags::Fluid`.
+///
 /// # Example
 ///
-///
+/// ```
+/// let phase = make_phase(
+///     PhaseFlags::Zero, // particle group
+///     PhaseFlags::SelfCollide | PhaseFlags::Fluid, // phase flags
+/// );
+/// ```
 #[inline]
 pub fn make_phase(group: PhaseFlags, particle_flags: PhaseFlags) -> i32 {
     // this is not an FFI call, this is an inline function is implemented in Rust by the `nvflex_sys` crate
     NvFlexMakePhase(group.bits(), particle_flags.bits())
 }
 
-/// Helper method to generates a phase with all shape channels set.
+/// Generate a bit set for the particle phase, this is a helper method to simply combine the group id and bit flags into a single integer.
+///
+/// # Arguments
+/// * `group` - The index of the group for this particle, should be an integer < 2^20.
+/// * `particle_flags` - A combination of the phase flags which should be a combination of `PhaseFlags::SelfCollide`, `PhaseFlags::SelfCollideFilter`, and `PhaseFlags::Fluid`.
+/// * `shape_channels` - A combination of `PhaseFlags::ShapeChannel0` - `PhaseFlags::ShapeChannel6` flags that control which shapes will be collided against, particles will only collide against shapes that share at least one set channel, see `make_shape_flags_with_channels()`.
+///
+/// # Example
+///
+/// ```
+/// let phase = make_phase_with_channels(
+///     PhaseFlags::Zero, // particle group
+///     PhaseFlags::SelfCollide | PhaseFlags::Fluid, // phase flags
+///     PhaseFlags::ShapeChannel0 | PhaseFlags::ShapeChannel2, // shape channels
+/// );
+/// ```
 #[inline]
 pub fn make_phase_with_channels(
     group: PhaseFlags,
