@@ -114,10 +114,11 @@ pub struct ParticleSpawner {
     pub phases: *mut NvFlexBuffer,
     /// Holds the indices of particles that have been made active.
     pub active_indices: *mut NvFlexBuffer,
+    pub solver: *mut NvFlexSolver,
 }
 
 impl ParticleSpawner {
-    pub fn new(lib: *mut NvFlexLibrary, max_particles: i32) -> Self {
+    pub fn new(lib: *mut NvFlexLibrary, solver: *mut NvFlexSolver, max_particles: i32) -> Self {
         // max_particles cannot be negative
         let max_particles = if max_particles < 0 { 0 } else { max_particles };
 
@@ -151,6 +152,7 @@ impl ParticleSpawner {
                     std::mem::size_of::<i32>() as _,
                     eNvFlexBufferHost,
                 ),
+                solver,
             }
         }
     }
@@ -201,8 +203,8 @@ impl ParticleSpawner {
     }
 
     /// Flushes all pending particles to the FleX solver. Returns whether any changes were applied or not.
-    pub fn flush(&mut self, solver: *mut NvFlexSolver) -> bool {
-        if self.pending_particles.is_empty() || solver.is_null() {
+    pub fn flush(&mut self) -> bool {
+        if self.pending_particles.is_empty() || self.solver.is_null() {
             return false;
         }
 
@@ -234,7 +236,7 @@ impl ParticleSpawner {
                 }
             }
 
-            // all particles are flushed to FleX, unmap the buffers now
+            // all particles are copied into the buffers, unmap them now
             NvFlexUnmap(self.buffer);
             NvFlexUnmap(self.velocities);
             NvFlexUnmap(self.phases);
@@ -249,11 +251,11 @@ impl ParticleSpawner {
 
         // upload updated buffers to the solver
         unsafe {
-            NvFlexSetParticles(solver, self.buffer, std::ptr::null_mut());
-            NvFlexSetVelocities(solver, self.velocities, std::ptr::null_mut());
-            NvFlexSetPhases(solver, self.phases, std::ptr::null_mut());
-            NvFlexSetActive(solver, self.active_indices, std::ptr::null_mut());
-            NvFlexSetActiveCount(solver, self.num_active_particles as _);
+            NvFlexSetParticles(self.solver, self.buffer, std::ptr::null_mut());
+            NvFlexSetVelocities(self.solver, self.velocities, std::ptr::null_mut());
+            NvFlexSetPhases(self.solver, self.phases, std::ptr::null_mut());
+            NvFlexSetActive(self.solver, self.active_indices, std::ptr::null_mut());
+            NvFlexSetActiveCount(self.solver, self.num_active_particles as _);
         }
 
         true

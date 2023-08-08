@@ -1,4 +1,4 @@
-use crate::{rstr, InitDesc, SolverDesc, SolverParams};
+use crate::{rstr, InitDesc, ParticleSpawner, SolverDesc, SolverParams};
 use nvflex_sys::*;
 
 /// Flex error return codes
@@ -67,8 +67,12 @@ unsafe extern "C" fn default_error_callback(
 
 #[derive(Debug, Clone)]
 pub struct FlexContext {
+    /// Pointer to the FleX library.
     pub lib: *mut NvFlexLibrary,
+    /// Pointer to the FleX particle solver.
     pub solver: *mut NvFlexSolver,
+    /// Holds FleX buffers, provides methods to spawn particles and upload them to the solver.
+    pub spawner: ParticleSpawner,
 }
 
 impl FlexContext {
@@ -121,8 +125,20 @@ impl FlexContext {
             let params: NvFlexParams = SolverParams::DEFAULT_PARAMS.fixed().into();
             NvFlexSetParams(solver, &params);
 
-            Some(Self { lib, solver })
+            let spawner = ParticleSpawner::new(lib, solver, flex_solver_desc.maxParticles);
+
+            Some(Self {
+                lib,
+                solver,
+                spawner,
+            })
         }
+    }
+
+    /// Returns a reference to the particle spawner.
+    #[inline]
+    pub fn spawner(&mut self) -> &mut ParticleSpawner {
+        &mut self.spawner
     }
 
     /// Update solver parameters.
@@ -159,6 +175,7 @@ impl FlexContext {
 impl Drop for FlexContext {
     fn drop(&mut self) {
         if !self.solver.is_null() {
+            self.spawner.solver = std::ptr::null_mut();
             unsafe { NvFlexDestroySolver(self.solver) }
         }
         if !self.lib.is_null() {
