@@ -18,3 +18,4 @@ default = ["ext", "d3d"]
 ext = [] # link FleX ext libs
 d3d = [] # link d3d libs
 cuda = [] # link cuda libs
+embed_libs = []
