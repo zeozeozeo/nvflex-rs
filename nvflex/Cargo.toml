@@ -1,0 +1,16 @@
+[package]
+name = "nvflex"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["logging"]
+logging = ["log"] # enabled logging using the `log` crate
+
+[dependencies]
+bitflags = "2.3.3"
+log = { version = "0.4.19", optional = true }
+mint = "0.5.9"
+nvflex-sys = { path = "../nvflex-sys" }

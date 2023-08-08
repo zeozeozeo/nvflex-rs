@@ -77,12 +77,20 @@ impl Vec3 {
 
 unsafe fn run() {
     // initialize FleX
-    let library = NvFlexInit(120, Some(flex_error_callback), std::ptr::null_mut());
+    let library = NvFlexInit(
+        NV_FLEX_VERSION as _,
+        Some(flex_error_callback),
+        std::ptr::null_mut(),
+    );
+    if library.is_null() {
+        panic!("unable to initialize FleX");
+    }
 
     // create new solver
     const MAX_PARTICLES: i32 = 10_000;
     let mut solver_desc = std::mem::zeroed::<NvFlexSolverDesc>();
     NvFlexSetSolverDescDefaults(&mut solver_desc);
+
     solver_desc.maxParticles = MAX_PARTICLES;
     solver_desc.maxDiffuseParticles = 0;
 
@@ -124,7 +132,7 @@ unsafe fn run() {
     params.adhesion = 1.0; // Controls how strongly particles stick to surfaces they hit, default 0.0, range [0.0, +inf]
     params.sleepThreshold = 1.0; // Particles with a velocity magnitude < this threshold will be considered fixed
 
-    params.maxSpeed = 1000.0; // The magnitude of particle velocity will be clamped to this value at the end of each step
+    params.maxSpeed = f32::MAX; // The magnitude of particle velocity will be clamped to this value at the end of each step
     params.maxAcceleration = 1000.0; // The magnitude of particle acceleration will be clamped to this value at the end of each step (limits max velocity change per-second), useful to avoid popping due to large interpenetrations
 
     params.shockPropagation = 0.0; // Artificially decrease the mass of particles based on height from a fixed reference point, this makes stacks and piles converge faster
@@ -132,9 +140,7 @@ unsafe fn run() {
     params.damping = 10.0; // Viscous drag force, applies a force proportional, and opposite to the particle velocity
 
     // cloth params
-    params.wind[0] = 0.0;
-    params.wind[0] = 0.0;
-    params.wind[0] = 0.0; // Constant acceleration applied to particles that belong to dynamic triangles, drag needs to be > 0 for wind to affect triangles
+    params.wind = [0.0; 3]; // Constant acceleration applied to particles that belong to dynamic triangles, drag needs to be > 0 for wind to affect triangles
     params.drag = 1.0; // Drag force applied to particles belonging to dynamic triangles, proportional to velocity^2*area in the negative velocity direction
     params.lift = 1.0; // Lift force applied to particles belonging to dynamic triangles, proportional to velocity^2*area in the direction perpendicular to velocity and (if possible), parallel to the plane normal
 
