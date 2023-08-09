@@ -14,9 +14,9 @@ bindgen = "0.66.1"
 cfg-if = "1.0.0"
 
 [features]
-default = ["ext", "d3d", "embed_libs"]
+default = ["ext", "d3d"]
 
 ext = [] # link FleX ext libs
 d3d = [] # link d3d libs
 cuda = [] # link cuda libs
-embed_libs = []
+embed_libs = [] # embed FleX libraries inside the executable (TODO: find a way to make FleX load DLLs from memory)

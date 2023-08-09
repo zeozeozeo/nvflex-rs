@@ -8,6 +8,7 @@ edition = "2021"
 [features]
 default = ["logging"]
 logging = ["log"] # enabled logging using the `log` crate
+embed_libs = ["nvflex-sys/embed_libs"] # not very useful as of right now, if you don't have the DLLs in the executable folder the app won't even start
 
 [dependencies]
 bitflags = "2.3.3"

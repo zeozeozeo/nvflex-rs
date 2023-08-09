@@ -169,36 +169,46 @@ cfg_if::cfg_if! {
 
 /// Returns the binary data and the library filenames.
 ///
+/// If the `embed_libs` feature is disabled, will return an empty vector.
+///
 /// If building in debug mode, only debug libraries are embedded, same for the release mode.
-#[cfg(feature = "embed_libs")]
 pub fn get_libraries() -> Vec<(&'static [u8], &'static str)> {
-    #[cfg(debug_assertions)]
-    return vec![
-        AMD_AGS,
-        CUDART,
-        GFSDK_AFTERMATH_LIB,
-        NV_FLEX_DEBUG_CUDA,
-        NV_FLEX_DEBUG_D3D,
-        NV_FLEX_DEVICE_DEBUG,
-        NV_FLEX_EXT_DEBUG_CUDA,
-        NV_FLEX_EXT_DEBUG_D3D,
-        NV_TOOLS_EXT,
-    ];
-    #[cfg(not(debug_assertions))]
-    return vec![
-        AMD_AGS,
-        CUDART,
-        GFSDK_AFTERMATH_LIB,
-        NV_FLEX_DEVICE_RELEASE,
-        NV_FLEX_EXT_RELEASE_CUDA,
-        NV_FLEX_EXT_RELEASE_D3D,
-        NV_FLEX_RELEASE_CUDA,
-        NV_FLEX_RELEASE_D3D,
-        NV_TOOLS_EXT,
-    ];
+    #[cfg(feature = "embed_libs")]
+    {
+        #[cfg(debug_assertions)]
+        return vec![
+            AMD_AGS,
+            CUDART,
+            GFSDK_AFTERMATH_LIB,
+            NV_FLEX_DEBUG_CUDA,
+            NV_FLEX_DEBUG_D3D,
+            NV_FLEX_DEVICE_DEBUG,
+            NV_FLEX_EXT_DEBUG_CUDA,
+            NV_FLEX_EXT_DEBUG_D3D,
+            NV_TOOLS_EXT,
+        ];
+        #[cfg(not(debug_assertions))]
+        return vec![
+            AMD_AGS,
+            CUDART,
+            GFSDK_AFTERMATH_LIB,
+            NV_FLEX_DEVICE_RELEASE,
+            NV_FLEX_EXT_RELEASE_CUDA,
+            NV_FLEX_EXT_RELEASE_D3D,
+            NV_FLEX_RELEASE_CUDA,
+            NV_FLEX_RELEASE_D3D,
+            NV_TOOLS_EXT,
+        ];
+    }
+    #[cfg(not(feature = "embed_libs"))]
+    {
+        return vec![];
+    }
 }
 
 /// Write embedded libraries to disk. Can be used as a hacky way of embedding the FleX libraries inside the executable.
+///
+/// If the `embed_libs` feature is disabled, will do nothing.
 ///
 /// TODO: maybe we can somehow tell FleX to load libraries from memory instead of loading them from disk?
 ///
@@ -213,10 +223,9 @@ pub fn get_libraries() -> Vec<(&'static [u8], &'static str)> {
 /// // write all required libraries to the current executable path
 /// let mut executable_dir = std::env::current_exe().unwrap();
 /// executable_dir.pop(); // pop the executable name
-/// nvflex_sys::embed::write_libraries(executable_dir, true).unwrap();
+/// nvflex_sys::embed::write_libraries_to_path(executable_dir, true).unwrap();
 /// ```
-#[cfg(feature = "embed_libs")]
-pub fn write_libraries(path: PathBuf, overwrite: bool) -> Result<(), std::io::Error> {
+pub fn write_libraries_to_path(path: PathBuf, overwrite: bool) -> Result<(), std::io::Error> {
     for (data, filename) in get_libraries() {
         let mut lib_path = path.clone();
         lib_path.push(filename);
@@ -228,4 +237,42 @@ pub fn write_libraries(path: PathBuf, overwrite: bool) -> Result<(), std::io::Er
         f.write_all(data)?;
     }
     Ok(())
+}
+
+/// Write embedded libraries to the current executable directory. Can be used as a hacky way of embedding the FleX libraries inside the executable.
+///
+/// If the `embed_libs` feature is disabled, will do nothing.
+///
+/// # Arguments
+///
+/// * `overwrite` - If true, existing library files will be overwritten.
+#[inline]
+pub fn write_libraries_to_exe_dir(overwrite: bool) -> Result<(), std::io::Error> {
+    write_libraries_to_path(std::env::current_exe()?, overwrite)
+}
+
+/// Whether all required dynamic libraries are present inside the given directory. If `None`, there was an error getting the file info.
+///
+/// If the `embed_libs` feature is disabled, will do nothing.
+///
+/// # Arguments
+///
+/// * `path` - Directory to search for libraries.
+pub fn libraries_present(path: PathBuf) -> Option<bool> {
+    for (_, filename) in get_libraries() {
+        let mut lib_path = path.clone();
+        lib_path.push(filename);
+        if !lib_path.try_exists().ok()? {
+            return Some(false); // this library does not exist
+        }
+    }
+    Some(true)
+}
+
+/// Whether all required dynamic libraries are present inside the executable. If `None`, there was an error getting the file info.
+///
+/// If the `embed_libs` feature is disabled, will do nothing.
+#[inline]
+pub fn libraries_present_in_exe_dir() -> Option<bool> {
+    libraries_present(std::env::current_exe().ok()?)
 }
