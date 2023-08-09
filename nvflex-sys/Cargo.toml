@@ -11,9 +11,10 @@ crate-type = ["lib"]
 bindgen = "0.66.1"
 
 [dependencies]
+cfg-if = "1.0.0"
 
 [features]
-default = ["ext", "d3d"]
+default = ["ext", "d3d", "embed_libs"]
 
 ext = [] # link FleX ext libs
 d3d = [] # link d3d libs
