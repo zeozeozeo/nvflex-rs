@@ -9,6 +9,6 @@ edition = "2021"
 nvflex = { path = "../../" }
 bevy = "0.11.0"
 smooth-bevy-cameras = "0.9.0"
-mint = "0.5.9"
 env_logger = "0.10.0"
 fastrand = "2.0.0"
+cgmath = "0.18.0"

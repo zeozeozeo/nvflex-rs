@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-use mint::{Vector3, Vector4};
+use cgmath::{Vector3, Vector4};
 use nvflex_sys::*;
 use std::{ops::RangeBounds, sync::atomic::AtomicPtr};
 

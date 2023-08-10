@@ -1,4 +1,4 @@
-use mint::{Vector3, Vector4};
+use cgmath::{vec3, vec4};
 use nvflex::*;
 use std::time::Instant;
 
@@ -11,17 +11,8 @@ fn main() {
     loop {
         // spawn a new particle
         ctx.spawner().spawn(
-            Vector4 {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-                w: 1.0,
-            },
-            Vector3 {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            },
+            vec4(0.0, 0.0, 0.0, 1.0),
+            vec3(0.0, 0.0, 0.0),
             make_phase(
                 PhaseFlags::Zero,
                 PhaseFlags::SelfCollide | PhaseFlags::Fluid,

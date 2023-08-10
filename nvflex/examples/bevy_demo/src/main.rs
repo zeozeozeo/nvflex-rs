@@ -1,5 +1,5 @@
 use bevy::{prelude::*, window::CursorGrabMode};
-use mint::{Vector3, Vector4};
+use cgmath::{vec3, vec4};
 use nvflex::*;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
@@ -117,17 +117,12 @@ fn update(
 
     // spawn a new particle
     flex.spawner().spawn(
-        Vector4::<f32> {
-            x: 0.0,
-            y: -5.0,
-            z: 0.0,
-            w: 0.1,
-        },
-        Vector3::<f32> {
-            x: (fastrand::f32() * 10.0) - 5.0,
-            y: (fastrand::f32() * 10.0) - 5.0,
-            z: (fastrand::f32() * 10.0) - 5.0,
-        },
+        vec4(0.0, -5.0, 0.0, 0.1),
+        vec3(
+            (fastrand::f32() * 10.0) - 5.0,
+            (fastrand::f32() * 10.0) - 5.0,
+            (fastrand::f32() * 10.0) - 5.0,
+        ),
         make_phase(
             PhaseFlags::Zero,
             PhaseFlags::SelfCollide | PhaseFlags::Fluid,

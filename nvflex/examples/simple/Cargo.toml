@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-mint = "0.5.9"
+cgmath = "0.18.0"
 nvflex = { path = "../../" }

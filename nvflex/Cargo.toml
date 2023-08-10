@@ -12,6 +12,7 @@ embed_libs = ["nvflex-sys/embed_libs"] # not very useful as of right now, if you
 
 [dependencies]
 bitflags = "2.3.3"
+cgmath = "0.18.0"
+genmesh = "0.6.2"
 log = { version = "0.4.19", optional = true }
-mint = "0.5.9"
 nvflex-sys = { path = "../nvflex-sys" }
