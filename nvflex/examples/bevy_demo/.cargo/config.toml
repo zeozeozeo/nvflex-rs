@@ -1,0 +1,4 @@
+# fixes the bevy/dynamic_linking flag on Windows
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+rustflags = ["-Zshare-generics=off"]

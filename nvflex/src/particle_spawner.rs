@@ -1,7 +1,7 @@
+use bitflags::bitflags;
 use mint::{Vector3, Vector4};
 use nvflex_sys::*;
-
-use bitflags::bitflags;
+use std::{ops::RangeBounds, sync::atomic::AtomicPtr};
 
 bitflags! {
     /// Flags that control a particle's behavior and grouping, use `make_phase()` or `make_phase_with_channels()` to construct a valid 32bit phase identifier.
@@ -122,27 +122,27 @@ impl Particle {
 }
 
 /// Holds FleX buffers, provides methods to spawn particles and upload them to the solver.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ParticleSpawner {
     /// Particles pending to be sent to FleX by `flush()`.
     pub pending_particles: Vec<Particle>,
     /// Maximum amount of particles that can be spawned.
     max_particles: usize,
-    /// Amount of spawned particles. This includes particles that are not active.
+    /// Amount of spawned particles. This includes particles that are not active and doesn't include pending particles.
     num_particles: usize,
     /// Amount of active particles.
     num_active_particles: usize,
     /// Holds the particle positions. x = x position, y = y position, z = z position, w = mass.
-    pub buffer: *mut NvFlexBuffer,
+    pub buffer: AtomicPtr<NvFlexBuffer>,
     /// Holds the particle velocities.
-    pub velocities: *mut NvFlexBuffer,
+    pub velocities: AtomicPtr<NvFlexBuffer>,
     /// Each particle has an associated phase id which controls how it interacts with other particles.
     ///
     /// Use `make_phase()` or `make_phase_with_channels()` to construct a valid 32bit phase identifier.
-    pub phases: *mut NvFlexBuffer,
+    pub phases: AtomicPtr<NvFlexBuffer>,
     /// Holds the indices of particles that have been made active.
-    pub active_indices: *mut NvFlexBuffer,
-    pub solver: *mut NvFlexSolver,
+    pub active_indices: AtomicPtr<NvFlexBuffer>,
+    pub solver: AtomicPtr<NvFlexSolver>,
 }
 
 impl ParticleSpawner {
@@ -156,36 +156,36 @@ impl ParticleSpawner {
                 max_particles: max_particles as _,
                 num_particles: 0,
                 num_active_particles: 0,
-                buffer: NvFlexAllocBuffer(
+                buffer: AtomicPtr::new(NvFlexAllocBuffer(
                     lib,
                     max_particles,
                     std::mem::size_of::<Vector4<f32>>() as _,
                     eNvFlexBufferHost,
-                ),
-                velocities: NvFlexAllocBuffer(
+                )),
+                velocities: AtomicPtr::new(NvFlexAllocBuffer(
                     lib,
                     max_particles,
                     std::mem::size_of::<Vector3<f32>>() as _,
                     eNvFlexBufferHost,
-                ),
-                phases: NvFlexAllocBuffer(
+                )),
+                phases: AtomicPtr::new(NvFlexAllocBuffer(
                     lib,
                     max_particles,
                     std::mem::size_of::<i32>() as _,
                     eNvFlexBufferHost,
-                ),
-                active_indices: NvFlexAllocBuffer(
+                )),
+                active_indices: AtomicPtr::new(NvFlexAllocBuffer(
                     lib,
                     max_particles,
                     std::mem::size_of::<i32>() as _,
                     eNvFlexBufferHost,
-                ),
-                solver,
+                )),
+                solver: AtomicPtr::new(solver), // TODO: is this safe?
             }
         }
     }
 
-    /// Amount of spawned particles. This includes particles that are not active.
+    /// Amount of spawned particles. This includes particles that are not active and doesn't include pending particles.
     #[inline]
     pub fn num_particles(&self) -> usize {
         self.num_particles
@@ -209,7 +209,34 @@ impl ParticleSpawner {
         self.pending_particles.len()
     }
 
+    #[inline]
+    pub unsafe fn solver_ptr(&self) -> *mut NvFlexSolver {
+        *self.solver.as_ptr()
+    }
+
+    #[inline]
+    pub unsafe fn buffer_ptr(&self) -> *mut NvFlexBuffer {
+        *self.buffer.as_ptr()
+    }
+
+    #[inline]
+    pub unsafe fn velocities_ptr(&self) -> *mut NvFlexBuffer {
+        *self.velocities.as_ptr()
+    }
+
+    #[inline]
+    pub unsafe fn phases_ptr(&self) -> *mut NvFlexBuffer {
+        *self.phases.as_ptr()
+    }
+
+    #[inline]
+    pub unsafe fn active_indices_ptr(&self) -> *mut NvFlexBuffer {
+        *self.active_indices.as_ptr()
+    }
+
     /// Spaws a new particle, but doesn't apply the changes immediately. Calling `self.flush()` will process all pending changes.
+    ///
+    /// Returns the index of the particle, or `None` if the particle limit is reached.
     ///
     /// # Arguments
     ///
@@ -223,23 +250,26 @@ impl ParticleSpawner {
         vel: impl Into<Vector3<f32>>,
         phase: i32,
         active: bool,
-    ) {
-        if self.pending_particles.len() < self.max_particles {
+    ) -> Option<usize> {
+        let num_pending = self.num_pending();
+        if self.num_particles() + num_pending < self.max_particles {
             self.pending_particles
                 .push(Particle::new(pos, vel, phase, active));
+            return Some(self.num_particles + num_pending);
         }
+        None
     }
 
     /// Flushes all pending particles to the FleX solver. Returns whether any changes were applied or not.
     pub fn flush(&mut self) -> bool {
-        if self.pending_particles.is_empty() || self.solver.is_null() {
-            return false;
-        }
-
         unsafe {
-            let buffer = NvFlexMap(self.buffer, eNvFlexMapWait) as *mut Vector4<f32>;
-            let velocities = NvFlexMap(self.velocities, eNvFlexMapWait) as *mut Vector3<f32>;
-            let phases = NvFlexMap(self.phases, eNvFlexMapWait) as *mut i32;
+            if self.pending_particles.is_empty() || self.solver_ptr().is_null() {
+                return false;
+            }
+
+            let buffer = NvFlexMap(self.buffer_ptr(), eNvFlexMapWait) as *mut Vector4<f32>;
+            let velocities = NvFlexMap(self.velocities_ptr(), eNvFlexMapWait) as *mut Vector3<f32>;
+            let phases = NvFlexMap(self.phases_ptr(), eNvFlexMapWait) as *mut i32;
             // none of the particles could be active, so we don't need to map the active indices buffer yet
             let mut active_indices: Option<*mut i32> = None;
 
@@ -253,7 +283,7 @@ impl ParticleSpawner {
                     // the particle is active, we need to map the active indices buffer if it's not mapped yet
                     if active_indices.is_none() {
                         active_indices =
-                            Some(NvFlexMap(self.active_indices, eNvFlexMapWait) as *mut i32);
+                            Some(NvFlexMap(self.active_indices_ptr(), eNvFlexMapWait) as *mut i32);
                     }
 
                     active_indices
@@ -265,11 +295,11 @@ impl ParticleSpawner {
             }
 
             // all particles are copied into the buffers, unmap them now
-            NvFlexUnmap(self.buffer);
-            NvFlexUnmap(self.velocities);
-            NvFlexUnmap(self.phases);
+            NvFlexUnmap(self.buffer_ptr());
+            NvFlexUnmap(self.velocities_ptr());
+            NvFlexUnmap(self.phases_ptr());
             if active_indices.is_some() {
-                NvFlexUnmap(self.active_indices);
+                NvFlexUnmap(self.active_indices_ptr());
             }
         }
 
@@ -279,24 +309,119 @@ impl ParticleSpawner {
 
         // upload updated buffers to the solver
         unsafe {
-            NvFlexSetParticles(self.solver, self.buffer, std::ptr::null_mut());
-            NvFlexSetVelocities(self.solver, self.velocities, std::ptr::null_mut());
-            NvFlexSetPhases(self.solver, self.phases, std::ptr::null_mut());
-            NvFlexSetActive(self.solver, self.active_indices, std::ptr::null_mut());
-            NvFlexSetActiveCount(self.solver, self.num_active_particles as _);
+            NvFlexSetParticles(self.solver_ptr(), self.buffer_ptr(), std::ptr::null_mut());
+            NvFlexSetVelocities(
+                self.solver_ptr(),
+                self.velocities_ptr(),
+                std::ptr::null_mut(),
+            );
+            NvFlexSetPhases(self.solver_ptr(), self.phases_ptr(), std::ptr::null_mut());
+            NvFlexSetActive(
+                self.solver_ptr(),
+                self.active_indices_ptr(),
+                std::ptr::null_mut(),
+            );
+            NvFlexSetActiveCount(self.solver_ptr(), self.num_active_particles as _);
         }
 
         true
+    }
+
+    /// Returns a slice of all particles in a specified range. This will map and unmap particle buffers.
+    ///
+    /// # Arguments
+    ///
+    /// * `range` - Range of particles to get.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let flex = FlexContext::new(None, None).unwrap();
+    /// let first_3_particles = flex.spawner().get_particles_range(0..3);
+    /// ```
+    pub fn get_particles_range<R>(&self, range: R) -> Vec<Particle>
+    where
+        R: RangeBounds<usize>,
+    {
+        use std::ops::Bound::*;
+        let num_particles = self.num_particles();
+
+        // TODO: is this correct?
+        let start = match range.start_bound() {
+            Unbounded => 0,
+            Included(idx) => (*idx).clamp(0, num_particles),
+            Excluded(idx) => (*idx).clamp(1, num_particles),
+        };
+        let end = match range.end_bound() {
+            Unbounded => num_particles,
+            Included(idx) => (*idx).clamp(0, num_particles - 1),
+            Excluded(idx) => (*idx).clamp(0, num_particles),
+        };
+        if end - start == 0 {
+            return vec![];
+        }
+
+        unsafe {
+            // map buffers
+            let buffer = NvFlexMap(self.buffer_ptr(), eNvFlexMapWait) as *mut Vector4<f32>;
+            let velocities = NvFlexMap(self.velocities_ptr(), eNvFlexMapWait) as *mut Vector3<f32>;
+            let phases = NvFlexMap(self.phases_ptr(), eNvFlexMapWait) as *mut i32;
+            // let active_indices = NvFlexMap(self.active_indices_ptr(), eNvFlexMapWait) as *mut i32;
+
+            let mut particles: Vec<Particle> = Vec::with_capacity(end - start);
+            for i in start..end {
+                let offset = i;
+                particles.push(Particle {
+                    pos: *buffer.add(offset),
+                    vel: *velocities.add(offset),
+                    phase: *phases.add(offset),
+                    active: true, // TODO: how do we get this?
+                });
+            }
+
+            NvFlexUnmap(self.buffer_ptr());
+            NvFlexUnmap(self.velocities_ptr());
+            NvFlexUnmap(self.phases_ptr());
+            // NvFlexUnmap(self.active_indices_ptr());
+
+            particles
+        }
+    }
+
+    /// Returns a slice of all particles. This will map and unmap particle buffers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let flex = FlexContext::new(None, None).unwrap();
+    /// let all_particles = flex.spawner().get_particles();
+    /// ```
+    #[inline]
+    pub fn get_particles(&self) -> Vec<Particle> {
+        self.get_particles_range(..)
+    }
+
+    pub(crate) fn read_buffers(&self) {
+        unsafe {
+            NvFlexGetParticles(self.solver_ptr(), self.buffer_ptr(), std::ptr::null());
+            NvFlexGetVelocities(self.solver_ptr(), self.velocities_ptr(), std::ptr::null());
+            NvFlexGetPhases(self.solver_ptr(), self.phases_ptr(), std::ptr::null());
+            /* NvFlexGetActive(
+                self.solver_ptr(),
+                self.active_indices_ptr(),
+                std::ptr::null(),
+            ); */
+        }
     }
 }
 
 impl Drop for ParticleSpawner {
     fn drop(&mut self) {
         unsafe {
-            NvFlexFreeBuffer(self.buffer);
-            NvFlexFreeBuffer(self.velocities);
-            NvFlexFreeBuffer(self.phases);
-            NvFlexFreeBuffer(self.active_indices);
+            NvFlexFreeBuffer(self.buffer_ptr());
+            NvFlexFreeBuffer(self.velocities_ptr());
+            NvFlexFreeBuffer(self.phases_ptr());
+            NvFlexFreeBuffer(self.active_indices_ptr());
         }
     }
 }

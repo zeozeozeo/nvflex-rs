@@ -1,5 +1,6 @@
 use crate::{rstr, InitDesc, ParticleSpawner, SolverDesc, SolverParams};
 use nvflex_sys::*;
+use std::sync::atomic::AtomicPtr;
 
 /// Flex error return codes
 #[derive(Debug, Copy, Clone)]
@@ -65,12 +66,12 @@ unsafe extern "C" fn default_error_callback(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FlexContext {
     /// Pointer to the FleX library.
-    pub lib: *mut NvFlexLibrary,
+    pub lib: AtomicPtr<NvFlexLibrary>,
     /// Pointer to the FleX particle solver.
-    pub solver: *mut NvFlexSolver,
+    pub solver: AtomicPtr<NvFlexSolver>,
     /// Holds FleX buffers, provides methods to spawn particles and upload them to the solver.
     pub spawner: ParticleSpawner,
 }
@@ -128,8 +129,8 @@ impl FlexContext {
             let spawner = ParticleSpawner::new(lib, solver, flex_solver_desc.maxParticles);
 
             Some(Self {
-                lib,
-                solver,
+                lib: AtomicPtr::new(lib),
+                solver: AtomicPtr::new(solver),
                 spawner,
             })
         }
@@ -139,6 +140,16 @@ impl FlexContext {
     #[inline]
     pub fn spawner(&mut self) -> &mut ParticleSpawner {
         &mut self.spawner
+    }
+
+    #[inline]
+    pub unsafe fn lib_ptr(&self) -> *mut NvFlexLibrary {
+        *self.lib.as_ptr()
+    }
+
+    #[inline]
+    pub unsafe fn solver_ptr(&self) -> *mut NvFlexSolver {
+        *self.solver.as_ptr()
     }
 
     /// Update solver parameters.
@@ -156,7 +167,7 @@ impl FlexContext {
         } else {
             params.into()
         };
-        unsafe { NvFlexSetParams(self.solver, &params) }
+        unsafe { NvFlexSetParams(self.solver_ptr(), &params) }
     }
 
     /// Integrate particle solver forward in time.
@@ -168,18 +179,20 @@ impl FlexContext {
     /// * `enable_timers` - Whether to enable per-kernel timers for profiling. Note that profiling can substantially slow down overall performance so this param should only be true in non-release builds.
     #[inline]
     pub fn tick(&mut self, dt: f32, substeps: i32, enable_timers: bool) {
-        unsafe { NvFlexUpdateSolver(self.solver, dt, substeps, enable_timers) }
+        unsafe { NvFlexUpdateSolver(self.solver_ptr(), dt, substeps, enable_timers) }
+        self.spawner().read_buffers();
     }
 }
 
 impl Drop for FlexContext {
     fn drop(&mut self) {
-        if !self.solver.is_null() {
-            self.spawner.solver = std::ptr::null_mut();
-            unsafe { NvFlexDestroySolver(self.solver) }
-        }
-        if !self.lib.is_null() {
-            unsafe { NvFlexShutdown(self.lib) }
+        unsafe {
+            if !self.solver_ptr().is_null() {
+                NvFlexDestroySolver(self.solver_ptr())
+            }
+            if !self.lib_ptr().is_null() {
+                NvFlexShutdown(self.lib_ptr())
+            }
         }
     }
 }
