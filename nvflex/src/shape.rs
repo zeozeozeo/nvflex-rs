@@ -14,6 +14,8 @@ pub struct Shape {
 }
 
 impl Shape {
+    /// Create an empty shape.
+    #[inline]
     pub fn new() -> Self {
         Self {
             vertices: vec![],
