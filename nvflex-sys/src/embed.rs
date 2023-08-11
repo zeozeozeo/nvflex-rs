@@ -251,7 +251,7 @@ pub fn write_libraries_to_exe_dir(overwrite: bool) -> Result<(), std::io::Error>
     write_libraries_to_path(std::env::current_exe()?, overwrite)
 }
 
-/// Whether all required dynamic libraries are present inside the given directory. If `None`, there was an error getting the file info.
+/// Whether all required dynamic libraries are present inside the given directory. If [`None`], there was an error getting the file info.
 ///
 /// If the `embed_libs` feature is disabled, will do nothing.
 ///
@@ -269,7 +269,7 @@ pub fn libraries_present(path: PathBuf) -> Option<bool> {
     Some(true)
 }
 
-/// Whether all required dynamic libraries are present inside the executable. If `None`, there was an error getting the file info.
+/// Whether all required dynamic libraries are present inside the executable. If [`None`], there was an error getting the file info.
 ///
 /// If the `embed_libs` feature is disabled, will do nothing.
 #[inline]

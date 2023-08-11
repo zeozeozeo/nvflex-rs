@@ -4,39 +4,39 @@ use nvflex_sys::*;
 use std::{ops::RangeBounds, sync::atomic::AtomicPtr};
 
 bitflags! {
-    /// Flags that control a particle's behavior and grouping, use `make_phase()` or `make_phase_with_channels()` to construct a valid 32bit phase identifier.
+    /// Flags that control a particle's behavior and grouping, use [`make_phase()`] or [`make_phase_with_channels()`] to construct a valid 32bit phase identifier.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct PhaseFlags: i32 {
         /// Bits `[ 0, 19]` represent the particle group for controlling collisions.
         const GroupMask = 0x000fffff;
         /// Bits `[20, 23]` hold flags about how the particle behave.
         const FlagsMask = 0x00f00000;
-        /// Bits `[24, 30]` hold flags representing what shape collision channels particles will collide with, see `make_shape_flags()` (highest bit reserved for now).
+        /// Bits `[24, 30]` hold flags representing what shape collision channels particles will collide with, see [`make_shape_flags()`] (highest bit reserved for now).
         const ShapeChannelMask = 0x7f000000;
 
         /// If set this particle will interact with particles of the same group.
         const SelfCollide = 1 << 20;
         // TODO: change the comment below
-        /// If set this particle will ignore collisions with particles closer than the radius in the rest pose, this flag should not be specified unless valid rest positions have been specified using NvFlexSetRestParticles().
+        /// If set this particle will ignore collisions with particles closer than the radius in the rest pose, this flag should not be specified unless valid rest positions have been specified using [`NvFlexSetRestParticles()`].
         const SelfCollideFilter = 1 << 21;
         /// If set this particle will generate fluid density constraints for its overlapping neighborsr = 1 << 21,.
         const Fluid = 1 << 22;
         /// Reserved.
         const Unused = 1 << 23;
 
-        /// Particle will collide with shapes with channel 0 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 0 set (see [`make_shape_flags()`]).
         const ShapeChannel0 = 1 << 24;
-        /// Particle will collide with shapes with channel 1 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 1 set (see [`make_shape_flags()`]).
         const ShapeChannel1 = 1 << 25;
-        /// Particle will collide with shapes with channel 2 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 2 set (see [`make_shape_flags()`]).
         const ShapeChannel2 = 1 << 26;
-        /// Particle will collide with shapes with channel 3 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 3 set (see [`make_shape_flags()`]).
         const ShapeChannel3 = 1 << 27;
-        /// Particle will collide with shapes with channel 4 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 4 set (see [`make_shape_flags()`]).
         const ShapeChannel4 = 1 << 28;
-        /// Particle will collide with shapes with channel 5 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 5 set (see [`make_shape_flags()`]).
         const ShapeChannel5 = 1 << 29;
-        /// Particle will collide with shapes with channel 6 set (see `make_shape_flags()`).
+        /// Particle will collide with shapes with channel 6 set (see [`make_shape_flags()`]).
         const ShapeChannel6 = 1 << 30;
 
         /// Equal to zero.
@@ -49,7 +49,7 @@ bitflags! {
 /// # Arguments
 ///
 /// * `group` - The index of the group for this particle, should be an integer < 2^20.
-/// * `particle_flags` - A combination of the phase flags which should be a combination of `PhaseFlags::SelfCollide`, `PhaseFlags::SelfCollideFilter`, and `PhaseFlags::Fluid`.
+/// * `particle_flags` - A combination of the phase flags which should be a combination of [`PhaseFlags::SelfCollide`], [`PhaseFlags::SelfCollideFilter`], and [`PhaseFlags::Fluid`].
 ///
 /// # Example
 ///
@@ -69,8 +69,8 @@ pub fn make_phase(group: PhaseFlags, particle_flags: PhaseFlags) -> i32 {
 ///
 /// # Arguments
 /// * `group` - The index of the group for this particle, should be an integer < 2^20.
-/// * `particle_flags` - A combination of the phase flags which should be a combination of `PhaseFlags::SelfCollide`, `PhaseFlags::SelfCollideFilter`, and `PhaseFlags::Fluid`.
-/// * `shape_channels` - A combination of `PhaseFlags::ShapeChannel0` - `PhaseFlags::ShapeChannel6` flags that control which shapes will be collided against, particles will only collide against shapes that share at least one set channel, see `make_shape_flags_with_channels()`.
+/// * `particle_flags` - A combination of the phase flags which should be a combination of [`PhaseFlags::SelfCollide`], [`PhaseFlags::SelfCollideFilter`], and [`PhaseFlags::Fluid`].
+/// * `shape_channels` - A combination of [`PhaseFlags::ShapeChannel0`] - [`PhaseFlags::ShapeChannel6`] flags that control which shapes will be collided against, particles will only collide against shapes that share at least one set channel, see `make_shape_flags_with_channels()`.
 ///
 /// # Example
 ///
@@ -98,7 +98,7 @@ pub struct Particle {
     pub pos: Vector4<f32>,
     /// Particle velocity, `vel.x` = x velocity, `vel.y` = y velocity, `vel.z` = z velocity.
     pub vel: Vector3<f32>,
-    /// Flags that control a particle's behavior and grouping, use `make_phase()` or `make_phase_with_channels()` to construct a valid 32bit phase identifier.
+    /// Flags that control a particle's behavior and grouping, use [`make_phase()`] or [`make_phase_with_channels()`] to construct a valid 32bit phase identifier.
     pub phase: i32,
     /// Whether the particle is active or not.
     pub active: bool,
@@ -123,7 +123,7 @@ impl Particle {
 
 /// Holds FleX buffers, provides methods to spawn particles and upload them to the solver.
 #[derive(Debug)]
-pub struct ParticleSpawner {
+pub struct World {
     /// Particles pending to be sent to FleX by `flush()`.
     pub pending_particles: Vec<Particle>,
     /// Maximum amount of particles that can be spawned.
@@ -138,14 +138,14 @@ pub struct ParticleSpawner {
     pub velocities: AtomicPtr<NvFlexBuffer>,
     /// Each particle has an associated phase id which controls how it interacts with other particles.
     ///
-    /// Use `make_phase()` or `make_phase_with_channels()` to construct a valid 32bit phase identifier.
+    /// Use [`make_phase()`] or [`make_phase_with_channels()`] to construct a valid 32bit phase identifier.
     pub phases: AtomicPtr<NvFlexBuffer>,
     /// Holds the indices of particles that have been made active.
     pub active_indices: AtomicPtr<NvFlexBuffer>,
     pub solver: AtomicPtr<NvFlexSolver>,
 }
 
-impl ParticleSpawner {
+impl World {
     pub fn new(lib: *mut NvFlexLibrary, solver: *mut NvFlexSolver, max_particles: i32) -> Self {
         // max_particles cannot be negative
         let max_particles = if max_particles < 0 { 0 } else { max_particles };
@@ -236,7 +236,7 @@ impl ParticleSpawner {
 
     /// Spaws a new particle, but doesn't apply the changes immediately. Calling `self.flush()` will process all pending changes.
     ///
-    /// Returns the index of the particle, or `None` if the particle limit is reached.
+    /// Returns the index of the particle, or [`None`] if the particle limit is reached.
     ///
     /// # Arguments
     ///
@@ -401,7 +401,7 @@ impl ParticleSpawner {
         self.get_particles_range(..)
     }
 
-    pub(crate) fn read_buffers(&self) {
+    pub fn read_buffers(&self) {
         unsafe {
             NvFlexGetParticles(self.solver_ptr(), self.buffer_ptr(), std::ptr::null());
             NvFlexGetVelocities(self.solver_ptr(), self.velocities_ptr(), std::ptr::null());
@@ -415,7 +415,7 @@ impl ParticleSpawner {
     }
 }
 
-impl Drop for ParticleSpawner {
+impl Drop for World {
     fn drop(&mut self) {
         unsafe {
             NvFlexFreeBuffer(self.buffer_ptr());

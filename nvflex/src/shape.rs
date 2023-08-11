@@ -164,4 +164,21 @@ impl Shape {
                 .collect(),
         )
     }
+
+    /// Get the bounds of the shape. Returns (min, max).
+    pub fn get_bounds(&self) -> (Vector3<f32>, Vector3<f32>) {
+        let mut min = vec3(f32::MAX, f32::MAX, f32::MAX);
+        let mut max = vec3(f32::MIN, f32::MIN, f32::MIN);
+
+        // calculate face bounds
+        for v in self.vertices.iter() {
+            min.x = min.x.min(v.x);
+            min.y = min.y.min(v.y);
+
+            max.x = max.x.max(v.x);
+            max.y = max.y.max(v.y);
+        }
+
+        (min, max)
+    }
 }

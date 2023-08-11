@@ -1,4 +1,4 @@
-use crate::{rstr, InitDesc, ParticleSpawner, SolverDesc, SolverParams};
+use crate::{rstr, InitDesc, SolverDesc, SolverParams, World};
 use nvflex_sys::*;
 use std::sync::atomic::AtomicPtr;
 
@@ -73,16 +73,16 @@ pub struct FlexContext {
     /// Pointer to the FleX particle solver.
     pub solver: AtomicPtr<NvFlexSolver>,
     /// Holds FleX buffers, provides methods to spawn particles and upload them to the solver.
-    pub spawner: ParticleSpawner,
+    pub spawner: World,
 }
 
 impl FlexContext {
-    /// Initializes the FleX library and creates a solver. Returns `None` if the library could not
-    /// be initialized. If the `logging` feature is enabled, FleX error messages will be logged using the `log` crate.
+    /// Initializes the FleX library and creates a solver. Returns [`None`] if the library could not
+    /// be initialized. If the `logging` feature is enabled, FleX error messages will be logged using the [`log`] crate.
     ///
     /// # Arguments
     ///
-    /// * `init_desc` - The `InitDesc` struct defining the device ordinal, D3D device/context and the type of D3D compute being used.
+    /// * `init_desc` - The [`InitDesc`] struct defining the device ordinal, D3D device/context and the type of D3D compute being used.
     /// * `solver_desc` - Optional solver description. If false, default solver settings are used.
     pub fn new(init_desc: Option<InitDesc>, solver_desc: Option<SolverDesc>) -> Option<Self> {
         unsafe {
@@ -126,7 +126,7 @@ impl FlexContext {
             let params: NvFlexParams = SolverParams::DEFAULT_PARAMS.fixed().into();
             NvFlexSetParams(solver, &params);
 
-            let spawner = ParticleSpawner::new(lib, solver, flex_solver_desc.maxParticles);
+            let spawner = World::new(lib, solver, flex_solver_desc.maxParticles);
 
             Some(Self {
                 lib: AtomicPtr::new(lib),
@@ -138,7 +138,7 @@ impl FlexContext {
 
     /// Returns a reference to the particle spawner.
     #[inline]
-    pub fn spawner(&mut self) -> &mut ParticleSpawner {
+    pub fn spawner(&mut self) -> &mut World {
         &mut self.spawner
     }
 
@@ -182,6 +182,12 @@ impl FlexContext {
         unsafe { NvFlexUpdateSolver(self.solver_ptr(), dt, substeps, enable_timers) }
         self.spawner().read_buffers();
     }
+
+    /*
+    pub fn create_triangle_mesh(shape: &Shape) {
+        let (lower, upper) = shape.get_bounds();
+    }
+    */
 }
 
 impl Drop for FlexContext {
