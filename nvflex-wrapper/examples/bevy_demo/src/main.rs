@@ -24,7 +24,7 @@ fn grab_mouse(
     }
 }
 fn main() {
-    env_logger::init();
+    // env_logger::init();
     App::new()
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
@@ -139,7 +139,7 @@ fn update(
                 radius: 0.1,
                 ..default()
             })),
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            material: materials.add(Color::WHITE.into()),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..Default::default()
         },

@@ -1,0 +1,18 @@
+[package]
+name = "nvflex-wrapper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["logging"]
+logging = ["log"] # enabled logging using the `log` crate
+embed_libs = ["nvflex-sys/embed_libs"] # not very useful as of right now, if you don't have the DLLs in the executable folder the app won't even start
+
+[dependencies]
+bitflags = "2.3.3"
+cgmath = "0.18.0"
+genmesh = "0.6.2"
+log = { version = "0.4.19", optional = true }
+nvflex-sys = { path = "../nvflex-sys" }
