@@ -127,7 +127,7 @@ pub struct Params {
 
 bitflags! {
     /// Flags that control a particle's behavior and grouping, use NvFlexMakePhase() to construct a valid 32bit phase identifier
-    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
     #[repr(C)]
     pub struct Phase: i32 {
         /// Bits [ 0, 19] represent the particle group for controlling collisions
@@ -164,9 +164,9 @@ bitflags! {
 }
 
 /// Time spent in each section of the solver update, times in GPU seconds, see NvFlexUpdateSolver()
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
-pub struct NvFlexTimers {
+pub struct Timers {
     /// Time spent in prediction
     pub predict: f32,
     /// Time spent creating grid indices
@@ -282,19 +282,13 @@ pub struct SolverCallbackParams {
     const int* originalToSortedMap;		//!< Device pointer that maps the sorted callback data to the original position given by SetParticles()
     const int* sortedToOriginalMap;		//!< Device pointer that maps the original particle index to the index in the callback data structure
 }
-
-/// Solver callback definition, see NvFlexRegisterSolverCallback()
-pub struct SolverCallback {
-    /// User data passed to the callback
-    void* userData;
-
-    /// Function pointer to a callback method
-    void (*function)(NvFlexSolverCallbackParams params);
-}
 */
 
 /// Function pointer type for error reporting callbacks
-pub type ErrorCallback = fn(typ: ErrorSeverity, msg: &str, file: &str, line: i32);
+pub type ErrorCallback = nvflex_sys::NvFlexErrorCallback;
+
+/// Solver callback definition, see NvFlexRegisterSolverCallback()
+pub type SolverCallback = nvflex_sys::NvFlexSolverCallback;
 
 /// Defines the different compute backends that Flex can use
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -311,7 +305,7 @@ pub enum ComputeType {
 /// Descriptor used to initialize Flex
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[repr(C)]
-pub struct NvFlexInitDesc {
+pub struct InitDesc {
     /// The GPU device index that should be used, if there is already a CUDA context on the calling thread then this parameter will be ignored and the active CUDA context used. Otherwise a new context will be created using the suggested device ordinal.
     pub device_index: i32,
     /// Enable or disable NVIDIA/AMD extensions in DirectX, can lead to improved performance.
@@ -325,7 +319,7 @@ pub struct NvFlexInitDesc {
     /// If true, run Flex on D3D11 render context, or D3D12 direct queue. If false, run on a D3D12 compute queue, or vendor specific D3D11 compute queue, allowing compute and graphics to run in parallel on some GPUs.
     pub run_on_render_context: bool,
 
-    /// Set to eNvFlexD3D11 if DirectX 11 should be used, eNvFlexD3D12 for DirectX 12, this must match the libraries used to link the application
+    /// Set to [`ComputeType::D3D11`] if DirectX 11 should be used, [`ComputeType::D3D12`] for DirectX 12, this must match the libraries used to link the application
     pub compute_type: ComputeType,
 }
 
@@ -359,15 +353,15 @@ pub struct SolverDesc {
 }
 
 /// Describes a source and destination buffer region for performing a copy operation.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 #[repr(C)]
 pub struct CopyDesc {
     /// Offset in elements from the start of the source buffer to begin reading from
-    src_offset: i32,
+    pub src_offset: i32,
     /// Offset in elements from the start of the destination buffer to being writing to
-    dst_offset: i32,
+    pub dst_offset: i32,
     /// Number of elements to copy
-    element_count: i32,
+    pub element_count: i32,
 }
 
 /// An opaque type representing a static triangle mesh in the solver
@@ -383,14 +377,14 @@ pub type DistanceFieldId = u32;
 pub type ConvexMeshId = u32;
 
 /// A basic sphere shape with origin at the center of the sphere and radius
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct SphereGeometry {
     pub radius: f32,
 }
 
 /// A collision capsule extends along the x-axis with its local origin at the center of the capsule
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct CapsuleGeometry {
     pub radius: f32,
@@ -398,14 +392,14 @@ pub struct CapsuleGeometry {
 }
 
 /// A simple box with interior [-halfHeight, +halfHeight] along each dimension
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct BoxGeometry {
-    half_extents: [f32; 3usize],
+    pub half_extents: [f32; 3usize],
 }
 
 /// A convex mesh instance with non-uniform scale
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct ConvexMeshGeometry {
     pub scale: [f32; 3usize],
@@ -413,7 +407,7 @@ pub struct ConvexMeshGeometry {
 }
 
 /// A scaled triangle mesh instance with non-uniform scale
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct TriangleMeshGeometry {
     /// The scale of the object from local space to world space
@@ -425,7 +419,7 @@ pub struct TriangleMeshGeometry {
 /// A scaled signed distance field instance, the local origin of the SDF is at corner of the field corresponding to the first voxel.
 ///
 /// The field is mapped to the local space volume [0, 1] in each dimension.
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct SDFGeometry {
     /// Uniform scale of SDF, this corresponds to the world space width of the shape
@@ -478,9 +472,48 @@ pub enum CollisionShapeFlags {
 }
 
 /// Holds the execution time for a specfic shader
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct DetailTimer {
     pub name: String,
     pub time: f32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nvflex_sys::*;
+    use std::mem::size_of;
+
+    #[test]
+    fn types_have_equal_size() {
+        assert!(VERSION == NV_FLEX_VERSION);
+        assert!(size_of::<MapFlags>() == size_of::<NvFlexMapFlags>());
+        assert!(size_of::<BufferType>() == size_of::<NvFlexBufferType>());
+        assert!(size_of::<RelaxationMode>() == size_of::<NvFlexRelaxationMode>());
+        assert!(size_of::<ErrorSeverity>() == size_of::<NvFlexErrorSeverity>());
+        assert!(size_of::<SolverCallbackStage>() == size_of::<NvFlexSolverCallbackStage>());
+        assert!(size_of::<ComputeType>() == size_of::<NvFlexComputeType>());
+        assert!(size_of::<FeatureMode>() == size_of::<NvFlexFeatureMode>());
+        assert!(size_of::<CollisionShapeType>() == size_of::<NvFlexCollisionShapeType>());
+        assert!(size_of::<CollisionShapeFlags>() == size_of::<NvFlexCollisionShapeFlags>());
+        assert!(size_of::<Params>() == size_of::<NvFlexParams>());
+        assert!(size_of::<Phase>() == size_of::<NvFlexPhase>());
+        assert!(size_of::<Timers>() == size_of::<NvFlexTimers>());
+        // TODO
+        // assert!(size_of::<SolverCallbackParams>() == size_of::<NvFlexSolverCallbackParams>());
+        // assert!(size_of::<SolverCallback>() == size_of::<NvFlexSolverCallback>());
+        assert!(size_of::<InitDesc>() == size_of::<NvFlexInitDesc>());
+        assert!(size_of::<SolverDesc>() == size_of::<NvFlexSolverDesc>());
+        assert!(size_of::<CopyDesc>() == size_of::<NvFlexCopyDesc>());
+        assert!(size_of::<SphereGeometry>() == size_of::<NvFlexSphereGeometry>());
+        assert!(size_of::<CapsuleGeometry>() == size_of::<NvFlexCapsuleGeometry>());
+        assert!(size_of::<BoxGeometry>() == size_of::<NvFlexBoxGeometry>());
+        assert!(size_of::<ConvexMeshGeometry>() == size_of::<NvFlexConvexMeshGeometry>());
+        assert!(size_of::<TriangleMeshGeometry>() == size_of::<NvFlexTriangleMeshGeometry>());
+        assert!(size_of::<SDFGeometry>() == size_of::<NvFlexSDFGeometry>());
+        // DetailTimer uses a String instead of a &str, so the size will be different
+        // assert!(size_of::<DetailTimer>() == size_of::<NvFlexDetailTimer>());
+        assert!(size_of::<CollisionGeometry>() == size_of::<NvFlexCollisionGeometry>());
+    }
 }
