@@ -1,8 +1,5 @@
 #![allow(non_upper_case_globals, non_camel_case_types, non_snake_case)]
 
-#[cfg(feature = "embed_libs")]
-pub mod embed;
-
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // functions below are translated from C++ to Rust, because they are defined inside the NvFlex.h header.

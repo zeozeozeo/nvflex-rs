@@ -2,12 +2,21 @@
 name = "nvflex"
 version = "0.1.0"
 edition = "2021"
+description = "Safe NVIDIA FleX bindings for Rust"
+authors = ["zeozeozeo"]
+documentation = "https://docs.rs/nvflex"
+homepage = "https://github.com/zeozeozeo/nvflex-rs"
+readme = "README.md"
+keywords = ["flex", "nvidia", "physics", "simulation", "bindings"]
+license = "BSL-1.0"
+categories = ["simulation", "api-bindings", "game-development"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["ext"]
 unsafe_send_sync = []
+ext = ["nvflex-sys/ext"]
 
 [dependencies]
 bitflags = "2.4.0"

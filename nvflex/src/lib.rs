@@ -3,12 +3,17 @@ mod library;
 mod mesh;
 mod solver;
 mod types;
+mod vector;
+
+#[cfg(feature = "ext")]
+pub mod ext;
 
 pub use buffer::*;
 pub use library::*;
 pub use mesh::*;
 pub use solver::*;
 pub use types::*;
+pub use vector::*;
 
 macro_rules! rstr {
     ($cstring:expr) => {{

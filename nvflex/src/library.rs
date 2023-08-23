@@ -42,25 +42,13 @@ impl Library {
     /// # Parameters
     ///
     /// * `solvers` - Pointer to array
-    /// * `n` - Size of array
     ///
     /// # Returns
     ///
     /// The number of active solvers in the library
     #[inline]
-    pub fn get_solvers(&self, solvers: *mut *mut Solver, n: i32) -> i32 {
-        unsafe { NvFlexGetSolvers(self.lib, solvers as *mut *mut _, n) }
-    }
-
-    /// Get a vector of active solvers in the library (util)
-    #[inline]
-    pub fn get_solvers_vec(&self) -> Vec<Solver> {
-        unsafe {
-            let num_solvers = self.get_solvers(std::ptr::null_mut(), 0);
-            let mut solvers: Vec<Solver> = vec![std::mem::zeroed::<Solver>(); num_solvers as _];
-            self.get_solvers(solvers.as_mut_ptr() as *mut *mut _, num_solvers);
-            solvers
-        }
+    pub fn get_solvers(&self, solvers: &mut [*mut Solver]) -> i32 {
+        unsafe { NvFlexGetSolvers(self.lib, solvers.as_mut_ptr() as *mut _, solvers.len() as _) }
     }
 
     /// Get the list of triangle mesh ids in the library
@@ -70,23 +58,15 @@ impl Library {
     /// # Parameters
     ///
     /// * `meshes` - Pointer to array
-    /// * `n` - Size of array
     ///
     /// # Returns
     ///
     /// The number of triangle mesh ids in the library
     #[inline]
-    pub fn get_triangle_mesh_ids(&self, meshes: *mut TriangleMeshId, n: i32) -> i32 {
-        unsafe { NvFlexGetTriangleMeshes(self.lib, meshes as *mut _, n) }
-    }
-
-    /// Get a vector of triangle mesh ids in the library (util)
-    #[inline]
-    pub fn get_triangle_mesh_ids_vec(&self) -> Vec<TriangleMeshId> {
-        let num_meshes = self.get_triangle_mesh_ids(std::ptr::null_mut(), 0);
-        let mut meshes: Vec<TriangleMeshId> = vec![0; num_meshes as _];
-        self.get_triangle_mesh_ids(meshes.as_mut_ptr(), num_meshes);
-        meshes
+    pub fn get_triangle_mesh_ids(&self, meshes: &mut [TriangleMeshId]) -> i32 {
+        unsafe {
+            NvFlexGetTriangleMeshes(self.lib, meshes.as_mut_ptr() as *mut _, meshes.len() as _)
+        }
     }
 
     /// Get the list of signed distance fields in the library
@@ -96,23 +76,13 @@ impl Library {
     /// # Parameters
     ///
     /// * `sdfs` - Pointer to array
-    /// * `n` - Size of array
     ///
     /// # Returns
     ///
     /// The number of signed distance fields in the library
     #[inline]
-    pub fn get_distance_field_ids(&self, sdfs: *mut DistanceFieldId, n: i32) -> i32 {
-        unsafe { NvFlexGetDistanceFields(self.lib, sdfs as *mut _, n) }
-    }
-
-    /// Get a vector of signed distance field ids in the library (util)
-    #[inline]
-    pub fn get_distance_field_ids_vec(&self) -> Vec<DistanceFieldId> {
-        let num_distance_fields = self.get_distance_field_ids(std::ptr::null_mut(), 0);
-        let mut distance_fields: Vec<DistanceFieldId> = vec![0; num_distance_fields as _];
-        self.get_distance_field_ids(distance_fields.as_mut_ptr(), num_distance_fields);
-        distance_fields
+    pub fn get_distance_field_ids(&self, sdfs: &mut [DistanceFieldId]) -> i32 {
+        unsafe { NvFlexGetDistanceFields(self.lib, sdfs.as_mut_ptr() as *mut _, sdfs.len() as _) }
     }
 
     /// Get the list of convex meshes in the library
@@ -122,23 +92,13 @@ impl Library {
     /// # Parameters
     ///
     /// * `meshes` - Pointer to array
-    /// * `n` - Size of array
     ///
     /// # Returns
     ///
     /// The number of convex meshes in the library
     #[inline]
-    pub fn get_convex_mesh_ids(&self, meshes: *mut ConvexMeshId, n: i32) -> i32 {
-        unsafe { NvFlexGetConvexMeshes(self.lib, meshes as *mut _, n) }
-    }
-
-    /// Get a vector of convex mesh ids in the library (util)
-    #[inline]
-    pub fn get_convex_mesh_ids_vec(&self) -> Vec<ConvexMeshId> {
-        let num_convex_meshes = self.get_convex_mesh_ids(std::ptr::null_mut(), 0);
-        let mut convex_meshes: Vec<ConvexMeshId> = vec![0; num_convex_meshes as _];
-        self.get_convex_mesh_ids(convex_meshes.as_mut_ptr(), num_convex_meshes);
-        convex_meshes
+    pub fn get_convex_mesh_ids(&self, meshes: &mut [ConvexMeshId]) -> i32 {
+        unsafe { NvFlexGetConvexMeshes(self.lib, meshes.as_mut_ptr() as *mut _, meshes.len() as _) }
     }
 
     /// Ensures that the CUDA context the library was initialized with is present on the current thread
