@@ -192,6 +192,18 @@ impl Library {
     pub fn wait(&self) {
         unsafe { NvFlexWait(self.lib) };
     }
+
+    /// Debug method (unsupported)
+    #[inline]
+    pub fn compute_wait_for_graphics(&self) {
+        unsafe { NvFlexComputeWaitForGraphics(self.lib) };
+    }
+
+    /// Debug method (unsupported)
+    #[inline]
+    pub fn get_data_aftermath(&self, p_data_out: *mut c_void, p_status_out: *mut c_void) {
+        unsafe { NvFlexGetDataAftermath(self.lib, p_data_out, p_status_out) };
+    }
 }
 
 impl Drop for Library {

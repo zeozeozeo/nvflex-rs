@@ -3,7 +3,7 @@ use crate::{
     SolverDesc, Timers,
 };
 use nvflex_sys::*;
-use std::any::Any;
+use std::{any::Any, ffi::c_void};
 
 /// Initialize the solver desc to its default values
 ///
@@ -911,6 +911,30 @@ impl Solver {
     #[inline]
     pub fn set_debug(&self, enable: bool) {
         unsafe { NvFlexSetDebug(self.solver, enable) };
+    }
+
+    /// Debug method (unsupported)
+    #[inline]
+    pub fn get_shape_bvh(&self, bvh: *mut c_void) {
+        unsafe { NvFlexGetShapeBVH(self.solver, bvh) };
+    }
+
+    /// Debug method (unsupported)
+    #[inline]
+    pub fn copy_solver(&self, dst: &Solver) {
+        unsafe { NvFlexCopySolver(dst.solver, self.solver) };
+    }
+
+    /// Debug method (unsupported)
+    #[inline]
+    pub fn copy_device_to_host<T: Any>(
+        &self,
+        p_device: &Buffer<T>,
+        p_host: *mut c_void,
+        size: i32,
+        stride: i32,
+    ) {
+        unsafe { NvFlexCopyDeviceToHost(self.solver, p_device.buf, p_host, size, stride) };
     }
 
     // TODO: add other debug methods
