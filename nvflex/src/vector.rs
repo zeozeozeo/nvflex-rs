@@ -231,7 +231,7 @@ impl<T: Clone> Drop for Vector<T> {
 }
 
 #[cfg(feature = "unsafe_send_sync")]
-unsafe impl<T> Send for Vector<T> {}
+unsafe impl<T: Clone> Send for Vector<T> {}
 
 #[cfg(feature = "unsafe_send_sync")]
-unsafe impl<T> Sync for Vector<T> {}
+unsafe impl<T: Clone> Sync for Vector<T> {}
