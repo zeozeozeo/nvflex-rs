@@ -15,6 +15,7 @@ pub use solver::*;
 pub use types::*;
 pub use vector::*;
 
+#[macro_export]
 macro_rules! rstr {
     ($cstring:expr) => {{
         #[allow(unused_unsafe)]
@@ -23,8 +24,6 @@ macro_rules! rstr {
             .expect("unable to convert C string")
     }};
 }
-
-pub(crate) use rstr;
 
 #[inline(always)]
 pub fn make_phase_with_channels(group: i32, particle_flags: i32, shape_channels: i32) -> i32 {

@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.11.2"
+nvflex = { path = "../nvflex", features = ["unsafe_send_sync"] } # the unsafe_send_sync feature is required for this to work

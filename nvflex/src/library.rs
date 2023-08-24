@@ -19,18 +19,26 @@ impl Library {
     ///
     /// * `version` - The version number the app is expecting, should almost always be [`VERSION`]
     ///
-    /// * `errorFunc` - The callback used for reporting errors.
+    /// * `error_func` - (Optional) The callback used for reporting errors.
     ///
-    /// * `desc` - The [`InitDesc`] struct defining the device ordinal, D3D device/context and the type of D3D compute being used
+    /// * `desc` - (Optional) The [`InitDesc`] struct defining the device ordinal, D3D device/context and the type of D3D compute being used
     ///
     /// # Returns
     ///
     /// A library instance that can be used to allocate shared object such as triangle meshes, buffers, etc
     #[inline]
-    pub fn init(error_func: ErrorCallback, desc: &mut InitDesc) -> Self {
+    pub fn init(error_func: ErrorCallback, desc: Option<InitDesc>) -> Self {
         unsafe {
             Self {
-                lib: NvFlexInit(VERSION as _, error_func, desc as *mut _ as *mut _),
+                lib: NvFlexInit(
+                    VERSION as _,
+                    error_func,
+                    if let Some(desc) = desc {
+                        std::mem::transmute(&desc)
+                    } else {
+                        std::ptr::null_mut()
+                    },
+                ),
             }
         }
     }

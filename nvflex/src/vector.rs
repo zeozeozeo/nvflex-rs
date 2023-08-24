@@ -25,7 +25,7 @@ impl<T: Clone> Vector<T> {
     ///
     /// * `size` - Usually 0
     /// * `typ` - Usually [`BufferType::Host`]
-    pub fn new(l: &Library, size: i32, typ: BufferType) -> Self {
+    pub fn new(l: Library, size: i32, typ: BufferType) -> Self {
         let v = Self {
             lib: l.lib,
             buffer: std::ptr::null_mut(),

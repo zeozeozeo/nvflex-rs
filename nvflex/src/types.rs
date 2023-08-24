@@ -1,6 +1,7 @@
 use std::ffi::c_void;
 
 use bitflags::bitflags;
+use nvflex_sys::NvFlexSetSolverDescDefaults;
 
 /// least 2 significant digits define minor version, eg: 10 -> version 0.10
 pub const VERSION: u32 = nvflex_sys::NV_FLEX_VERSION;
@@ -350,6 +351,17 @@ pub struct SolverDesc {
     pub max_neighbors_per_particle: i32,
     /// Maximum number of collision contacts per-particle
     pub max_contacts_per_particle: i32,
+}
+
+impl Default for SolverDesc {
+    #[inline]
+    fn default() -> Self {
+        unsafe {
+            let mut solver_desc = std::mem::zeroed::<SolverDesc>();
+            NvFlexSetSolverDescDefaults(&mut solver_desc as *mut _ as _);
+            solver_desc
+        }
+    }
 }
 
 /// Describes a source and destination buffer region for performing a copy operation.

@@ -21,7 +21,7 @@ impl TriangleMesh {
     ///
     /// A triangle mesh object
     #[inline]
-    pub fn new(lib: &Library) -> Self {
+    pub fn new(lib: Library) -> Self {
         unsafe {
             Self {
                 id: NvFlexCreateTriangleMesh(lib.lib),
@@ -32,7 +32,7 @@ impl TriangleMesh {
 
     /// Creates a [`TriangleMesh`] from a [`Library`] and a [`TriangleMeshId`]
     #[inline]
-    pub fn from_id(lib: &Library, id: TriangleMeshId) -> Self {
+    pub fn from_id(lib: Library, id: TriangleMeshId) -> Self {
         Self { id, lib: lib.lib }
     }
 
@@ -125,7 +125,7 @@ impl DistanceField {
     ///
     /// A signed distance field object
     #[inline]
-    pub fn new(lib: &Library) -> Self {
+    pub fn new(lib: Library) -> Self {
         unsafe {
             Self {
                 id: NvFlexCreateDistanceField(lib.lib),
@@ -136,7 +136,7 @@ impl DistanceField {
 
     /// Creates a [`DistanceField`] from a [`Library`] and a [`DistanceFieldId`]
     #[inline]
-    pub fn from_id(lib: &Library, id: DistanceFieldId) -> Self {
+    pub fn from_id(lib: Library, id: DistanceFieldId) -> Self {
         Self { id, lib: lib.lib }
     }
 
@@ -194,7 +194,7 @@ impl ConvexMesh {
     ///
     /// A convex mesh object
     #[inline]
-    pub fn new(lib: &Library) -> Self {
+    pub fn new(lib: Library) -> Self {
         unsafe {
             Self {
                 id: NvFlexCreateConvexMesh(lib.lib),
@@ -205,7 +205,7 @@ impl ConvexMesh {
 
     /// Creates a [`ConvexMesh`] from a [`Library`] and a [`ConvexMeshId`]
     #[inline]
-    pub fn from_id(lib: &Library, id: ConvexMeshId) -> Self {
+    pub fn from_id(lib: Library, id: ConvexMeshId) -> Self {
         Self { id, lib: lib.lib }
     }
 

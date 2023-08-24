@@ -20,7 +20,7 @@ impl<T> Buffer<T> {
     /// * `element_count` - The number of elements in the buffer
     /// * `typ` - The type of buffer to allocate, can be either host memory or device memory
     #[inline]
-    pub fn new(lib: &Library, element_count: i32, typ: BufferType) -> Self {
+    pub fn new(lib: Library, element_count: i32, typ: BufferType) -> Self {
         unsafe {
             Self {
                 buf: NvFlexAllocBuffer(lib.lib, element_count, size_of::<T>() as _, typ as _),
@@ -82,7 +82,7 @@ impl<T> Buffer<T> {
     ///
     /// A valid [`Buffer`] instance that may be used with NvFlexGet*() methods to populate the render buffer using direct GPU-GPU copies
     #[inline]
-    pub fn register_ogl_buffer(lib: &Library, buf: i32, element_count: i32) -> Self {
+    pub fn register_ogl_buffer(lib: Library, buf: i32, element_count: i32) -> Self {
         unsafe {
             Self {
                 buf: NvFlexRegisterOGLBuffer(lib.lib, buf, element_count, size_of::<T>() as _),
@@ -109,7 +109,7 @@ impl<T> Buffer<T> {
     ///
     ///  A valid [`Buffer`] instance that may be used with NvFlexGet*() methods to populate the render buffer using direct GPU-GPU copies
     #[inline]
-    pub fn register_d3d_buffer(lib: &Library, buffer: *mut c_void, element_count: i32) -> Self {
+    pub fn register_d3d_buffer(lib: Library, buffer: *mut c_void, element_count: i32) -> Self {
         unsafe {
             Self {
                 buf: NvFlexRegisterD3DBuffer(lib.lib, buffer, element_count, size_of::<T>() as _),

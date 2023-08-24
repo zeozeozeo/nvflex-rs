@@ -646,7 +646,7 @@ impl Container {
     ///
     /// A new container
     #[inline]
-    pub fn create(lib: &Library, solver: &Solver, max_particles: i32) -> Self {
+    pub fn create(lib: Library, solver: &Solver, max_particles: i32) -> Self {
         unsafe {
             Self {
                 container: NvFlexExtCreateContainer(lib.lib, solver.solver, max_particles),

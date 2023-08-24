@@ -47,7 +47,7 @@ impl Solver {
     /// * `lib` - The library instance to use
     /// * `desc` - Reference to a solver description structure used to create the solver
     #[inline]
-    pub fn create(lib: &Library, desc: &SolverDesc) -> Self {
+    pub fn create(lib: Library, desc: &SolverDesc) -> Self {
         unsafe {
             Self {
                 solver: NvFlexCreateSolver(lib.lib, desc as *const _ as *const _),
@@ -156,7 +156,7 @@ impl Solver {
     /// * `enableTimers` - Whether to enable per-kernel timers for profiling. Note that profiling can substantially slow down overall performance so this param should only be true in non-release builds
     ///
     #[inline]
-    pub fn update_solver(&self, dt: f32, substeps: i32, enable_timers: bool) {
+    pub fn update(&self, dt: f32, substeps: i32, enable_timers: bool) {
         unsafe { NvFlexUpdateSolver(self.solver, dt, substeps, enable_timers) }
     }
 
