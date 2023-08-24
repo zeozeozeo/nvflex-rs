@@ -133,125 +133,6 @@ unsafe impl Send for MovingFrame {}
 #[cfg(feature = "unsafe_send_sync")]
 unsafe impl Sync for MovingFrame {}
 
-/*
-// TODO: convert pointers to vectors
-/// Represents a group of particles and constraints, each asset
-/// can be instanced into a container using NvFlexExtCreateInstance()
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct Asset {
-    // particles
-    /// Local space particle positions, x,y,z,1/mass
-    pub particles: *mut f32,
-    /// Number of particles
-    pub num_particles: i32,
-    /// Maximum number of particles, allows extra space for tearable assets which duplicate particles
-    pub max_particles: i32,
-
-    // springs
-    /// Spring indices
-    pub spring_indices: *mut i32,
-    /// Spring coefficients
-    pub spring_coefficients: *mut f32,
-    /// Spring rest-lengths
-    pub spring_rest_lengths: *mut f32,
-    /// Number of springs
-    pub num_springs: i32,
-
-    // shapes
-    /// The indices of the shape matching constraints
-    pub shape_indices: *mut i32,
-    /// Total number of indices for shape constraints
-    pub num_shape_indices: i32,
-    /// Each entry stores the end of the shape's indices in the indices array (exclusive prefix sum of shape lengths)
-    pub shape_offsets: *mut i32,
-    /// The stiffness coefficient for each shape
-    pub shape_coefficients: *mut f32,
-    /// The position of the center of mass of each shape, an array of vec3s mNumShapes in length
-    pub shape_centers: *mut f32,
-    /// The number of shape matching constraints
-    pub num_shapes: i32,
-
-    // plastic deformation
-    /// The plastic threshold coefficient for each shape
-    pub shape_plastic_thresholds: *mut f32,
-    /// The plastic creep coefficient for each shape
-    pub shape_plastic_creeps: *mut f32,
-
-    // faces for cloth
-    /// Indexed triangle mesh indices for clothing
-    pub triangle_indices: *mut i32,
-    /// Number of triangles
-    pub num_triangles: i32,
-
-    // inflatable params
-    /// Whether an inflatable constraint should be added
-    pub inflatable: bool,
-    /// The rest volume for the inflatable constraint
-    pub inflatable_volume: f32,
-    /// How much over the rest volume the inflatable should attempt to maintain
-    pub inflatable_pressure: f32,
-    /// How stiff the inflatable is
-    pub inflatable_stiffness: f32,
-}
-
-// TODO: convert pointers to vectors/references
-/// Represents an instance of a [`Asset`] in a container
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct Instance {
-    /// Simulation particle indices
-    pub particle_indices: *mut i32,
-    /// Number of simulation particles
-    pub num_particles: i32,
-
-    /// Index in the container's triangle array
-    pub triangle_index: i32,
-    /// Index in the container's shape body constraints array
-    pub shape_index: i32,
-    /// Index in the container's inflatables array
-    pub inflatable_index: i32,
-
-    /// Shape matching group translations (vec3s)
-    pub shape_translations: *mut f32,
-    /// Shape matching group rotations (quaternions)
-    pub shape_rotations: *mut f32,
-
-    /// Source asset used to create this instance
-    pub asset: *const Asset,
-
-    /// User data pointer
-    pub user_data: *mut c_void,
-}
-
-// TODO: convert pointers to vectors/references
-/// Represents a soft joint with a radius overlapping different flex objects
-/// Each soft joint can be spawned into a container using NvFlexExtCreateSoftJoint()
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct SoftJoint {
-    /// Global indices
-    pub particle_indices: *mut i32,
-    /// Relative offsets from the particles of the joint to the center
-    pub particle_local_positions: *mut f32,
-    /// Index in the container's shape body constraints array
-    pub shape_index: i32,
-    /// Number of particles in the joint
-    pub num_particles: i32,
-
-    /// Joint shape matching group translations (vec3s)
-    pub shape_translations: [f32; 3],
-    /// Joint shape matching group rotations (quaternions)
-    pub shape_rotations: [f32; 4],
-
-    /// Joint stiffness
-    pub stiffness: f32,
-
-    /// Joint status flag
-    pub initialized: bool,
-}
-*/
-
 /// Create an index buffer of unique vertices in the mesh (collapses vertices in the same position even if they have different normals / texcoords).
 /// This can be used to create simulation meshes from render meshes, and is typically done as a pre-pass before calling NvFlexExtCreateClothFromMesh().
 ///
@@ -718,24 +599,35 @@ pub fn create_soft_mesh_skinning(
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+pub struct ShapeData {
+    /// Receives a pointer to the array quaternion rotation data in `[x, y, z, w]` format
+    pub rotations: *mut f32,
+    /// Receives a pointer to an array of shape body translations in `[x, y, z]` format
+    pub positions: *mut f32,
+    /// Number of valid tranforms
+    pub n: i32,
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct ParticleData {
     /// Receives a pointer to the particle position / mass data
-    particles: *mut f32,
+    pub particles: *mut f32,
     /// Receives a pointer to the particle's rest position (used for self collision culling)
-    rest_particles: *mut f32,
+    pub rest_particles: *mut f32,
     /// Receives a pointer to the particle velocity data
-    velocities: *mut f32,
+    pub velocities: *mut f32,
     /// Receives a pointer to the particle phase data
-    phases: *mut i32,
+    pub phases: *mut i32,
     /// Receives a pointer to the particle normal data with 16 byte stride in format `[nx, ny, nz, nw]`
-    normals: *mut f32,
+    pub normals: *mut f32,
 
     /// Receive a pointer to the particle lower bounds `[x, y, z]`
-    lower: *const f32,
+    pub lower: *const f32,
     /// Receive a pointer to the particle upper bounds `[x, y, z]`
-    upper: *const f32,
+    pub upper: *const f32,
 }
 
 /// Opaque type representing a simulation
@@ -806,10 +698,7 @@ impl Container {
     /// remain valid `unmap_particle_data()` is called.
     #[inline]
     pub fn map_particle_data(&self) -> ParticleData {
-        unsafe {
-            *(&NvFlexExtMapParticleData(self.container) as *const NvFlexExtParticleData
-                as *const ParticleData)
-        }
+        unsafe { std::mem::transmute(NvFlexExtMapParticleData(self.container)) }
     }
 
     #[inline]
@@ -817,7 +706,88 @@ impl Container {
         unsafe { NvFlexExtUnmapParticleData(self.container) }
     }
 
-    
+    /// Access shape body constraint data, see NvFlexExtGetParticleData() for notes on ownership.
+    #[inline]
+    pub fn map_shape_data(&self) -> ShapeData {
+        unsafe { std::mem::transmute(NvFlexExtMapShapeData(self.container)) }
+    }
+
+    /// Unmap shape transform data, see `map_shape_data()`
+    #[inline]
+    pub fn unmap_shape_data(&self) {
+        unsafe { NvFlexExtUnmapParticleData(self.container) }
+    }
+
+    /// Notifies the container that asset data has changed and needs to be sent to the GPU
+    /// this should be called if the constraints for an existing asset are modified by the user
+    ///
+    /// # Parameters
+    ///
+    /// * `asset` - The asset which was modified (can be [`None`])
+    #[inline]
+    pub fn notify_asset_changed(&self, asset: Option<&Asset>) {
+        unsafe {
+            NvFlexExtNotifyAssetChanged(
+                self.container,
+                if let Some(asset) = asset {
+                    asset.asset
+                } else {
+                    std::ptr::null()
+                },
+            )
+        }
+    }
+
+    // TODO: rewrite the C code example in Rust
+    /// Updates the container, applies force fields, steps the solver forward in time, updates the host with the results synchronously.
+    /// This is a helper function which performs a synchronous update using the following flow.
+    ///
+    /// ```c
+    /// // async update GPU data
+    /// NvFlexExtPushToDevice(container);
+    /// // update solver
+    /// NvFlexUpdateSolver(container, dt, iterations);
+    /// // async read data back to CPU
+    /// NvFlexExtPullFromDevice(container);
+    /// // read / write particle data on CPU
+    /// NvFlexExtParticleData data = NvFlexExtMapParticleData();
+    /// // CPU particle processing
+    /// ProcessParticles(data);
+    /// // unmap data
+    /// NvFlexExtUnmapParticleData();
+    /// ```
+    ///
+    /// # Parameters
+    ///
+    /// * `dt` - The time-step in seconds
+    /// * `num_substeps` - The number of substeps to perform
+    /// * `enable_timers` - Whether to record detailed timers, see NvFlexUpdateSolver()
+    #[inline]
+    pub fn tick(&self, dt: f32, num_substeps: i32, enable_timers: bool) {
+        unsafe { NvFlexExtTickContainer(self.container, dt, num_substeps, enable_timers) }
+    }
+
+    /// Updates the device asynchronously, transfers any particle and constraint changes to the flex solver,
+    /// expected to be called in the following sequence: NvFlexExtPushToDevice, NvFlexUpdateSolver, NvFlexExtPullFromDevice, flexSynchronize
+    #[inline]
+    pub fn push_to_device(&self) {
+        unsafe { NvFlexExtPushToDevice(self.container) }
+    }
+
+    /// Updates the host asynchronously, transfers particle and constraint data back to he host,
+    /// expected to be called in the following sequence: NvFlexExtPushToDevice, NvFlexUpdateSolver, NvFlexExtPullFromDevice
+    #[inline]
+    pub fn pull_from_device(&self) {
+        unsafe { NvFlexExtPullFromDevice(self.container) }
+    }
+
+    /// Synchronizes the per-instance data with the container's data, should be called after the synchronization with the solver read backs are complete
+    ///
+    /// The instances belonging to this container will be updated
+    #[inline]
+    pub fn update_instances(&self) {
+        unsafe { NvFlexExtUpdateInstances(self.container) }
+    }
 }
 
 impl Drop for Container {
@@ -832,3 +802,283 @@ unsafe impl Send for Container {}
 
 #[cfg(feature = "unsafe_send_sync")]
 unsafe impl Sync for Container {}
+
+/// Represents an instance of a [`Asset`] in a container
+#[derive(Debug, Clone)]
+pub struct Instance {
+    pub(crate) container: *mut NvFlexExtContainer,
+    pub(crate) instance: *mut NvFlexExtInstance,
+}
+
+impl Instance {
+    /// Creates an instance of an asset, the container will internally store a reference to the asset so it should remain valid for the instance lifetime. This
+    /// method will allocate particles for the asset, assign their initial positions, velocity and phase.
+    ///
+    /// # Parameters
+    ///
+    /// * `container` - The container to spawn into
+    /// * `particle_data` - Reference to a mapped particle data struct, returned from [`Container::map_particle_data()`]
+    /// * `asset` - The asset to be spawned
+    /// * `transform` - A 4x4 column major, column vector transform that specifies the initial world space configuration of the particles
+    /// * `vx` - The velocity of the particles along the x axis
+    /// * `vy` - The velocity of the particles along the y axis
+    /// * `vz` - The velocity of the particles along the z axis
+    /// * `phase` - The phase used for the particles
+    /// * `inv_mass_scale` - A factor applied to the per particle inverse mass
+    ///
+    /// # Returns
+    ///
+    /// The instance of the asset
+    #[inline]
+    pub fn create(
+        container: &Container,
+        particle_data: &mut ParticleData,
+        asset: &Asset,
+        transform: &[f32; 4 * 4],
+        vx: f32,
+        vy: f32,
+        vz: f32,
+        phase: i32,
+        inv_mass_scale: f32,
+    ) -> Self {
+        unsafe {
+            Self {
+                container: container.container,
+                instance: NvFlexExtCreateInstance(
+                    container.container,
+                    particle_data as *mut _ as _,
+                    asset.asset,
+                    transform.as_ptr(),
+                    vx,
+                    vy,
+                    vz,
+                    phase,
+                    inv_mass_scale,
+                ),
+            }
+        }
+    }
+}
+
+impl Drop for Instance {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { NvFlexExtDestroyInstance(self.container, self.instance) }
+    }
+}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Send for Instance {}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Sync for Instance {}
+
+/// Controls the way that force fields affect particles
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
+pub enum ForceMode {
+    /// Apply field value as a force.
+    Force = 0,
+    /// Apply field value as an impulse.
+    Impulse = 1,
+    /// Apply field value as a velocity change.
+    VelocityChange = 2,
+}
+
+/// Force field data, currently just supports radial fields
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
+pub struct ForceField {
+    /// Center of force field
+    position: [f32; 3],
+    /// Radius of the force field
+    radius: f32,
+    /// Strength of the force field
+    strength: f32,
+    /// Mode of field application
+    mode: ForceMode,
+    /// Linear or no falloff
+    linear_falloff: bool,
+}
+
+/// Opaque type representing a force field callback structure that ecapsulates
+/// the force field kernels and associated data applied as a callback during the Flex update
+#[derive(Debug, Clone)]
+pub struct ForceFieldCallback {
+    callback: *mut NvFlexExtForceFieldCallback,
+}
+
+impl ForceFieldCallback {
+    /// Create a [`ForceFieldCallback`] structure, each callback is associated with the
+    /// passed in solver once the NvFlexExtSetForceFields() is called.
+    ///
+    /// # Parameters
+    ///
+    /// * `solver` - A valid solver created with NvFlexCreateSolver()
+    ///
+    /// # Returns
+    ///
+    /// A callback structure
+    #[inline]
+    pub fn create(&self, solver: &Solver) -> Self {
+        unsafe {
+            Self {
+                callback: NvFlexExtCreateForceFieldCallback(solver.solver),
+            }
+        }
+    }
+
+    /// Set force fields on the container, these will be applied during the Flex update
+    ///
+    /// # Parameters
+    ///
+    /// * `force_fields` - An array of force field data, may be host or GPU memory
+    #[inline]
+    pub fn set_force_fields(&self, force_fields: &[ForceField]) {
+        unsafe {
+            NvFlexExtSetForceFields(
+                self.callback,
+                force_fields.as_ptr() as _,
+                force_fields.len() as _,
+            )
+        }
+    }
+}
+
+impl Drop for ForceFieldCallback {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { NvFlexExtDestroyForceFieldCallback(self.callback) }
+    }
+}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Send for ForceFieldCallback {}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Sync for ForceFieldCallback {}
+
+/// Represents a soft joint with a radius overlapping different flex objects
+///
+/// Each soft joint can be spawned into a container using [`SoftJoint::create()`]
+#[derive(Debug, Clone)]
+pub struct SoftJoint {
+    pub(crate) container: *mut NvFlexExtContainer,
+    pub(crate) joint: *mut NvFlexExtSoftJoint,
+}
+
+impl SoftJoint {
+    /// Create a soft joint, the container will internally store a reference to the joint array
+    ///
+    /// # Parameters
+    ///
+    /// * `container` - The container to spawn into
+    /// * `particle_indices` - A pointer to an array of particle indices
+    /// * `particle_local_positions` - A pointer to an array of particle local positions
+    /// * `num_joint_particles` - The number of particles in the joint
+    /// * `stiffness` - The stiffness of the joint
+    ///
+    /// # Returns
+    ///
+    /// A soft joint instance
+    #[inline]
+    pub fn create(
+        container: &Container,
+        particle_indices: &[i32],
+        particle_local_positions: &[f32],
+        num_joint_particles: i32,
+        stiffness: f32,
+    ) -> Self {
+        assert!(
+            particle_indices.len() >= num_joint_particles as _
+                && particle_local_positions.len() >= num_joint_particles as _
+        );
+        unsafe {
+            Self {
+                container: container.container,
+                joint: NvFlexExtCreateSoftJoint(
+                    container.container,
+                    particle_indices.as_ptr(),
+                    particle_local_positions.as_ptr(),
+                    num_joint_particles,
+                    stiffness,
+                ),
+            }
+        }
+    }
+
+    /// Transform all the local particles of the soft joint
+    ///
+    /// # Parameters
+    ///
+    /// * `position` - A vec3 storing the soft joint new position
+    /// * `rotation` - A quaternion storing the soft joint new rotation
+    #[inline]
+    pub fn set_transform(&self, position: &[f32; 3], rotation: &[f32; 4]) {
+        unsafe {
+            NvFlexExtSoftJointSetTransform(
+                self.container,
+                self.joint,
+                position.as_ptr(),
+                rotation.as_ptr(),
+            )
+        }
+    }
+
+    /// Global indices
+    #[inline]
+    pub fn particle_indices(&self) -> *mut i32 {
+        unsafe { (*self.joint).particleIndices }
+    }
+    /// Relative offsets from the particles of the joint to the center
+    #[inline]
+    pub fn particle_local_positions(&self) -> *mut f32 {
+        unsafe { (*self.joint).particleLocalPositions }
+    }
+    /// Index in the container's shape body constraints array
+    #[inline]
+    pub fn shape_index(&self) -> i32 {
+        unsafe { (*self.joint).shapeIndex }
+    }
+    /// Number of particles in the joint
+    #[inline]
+    pub fn num_particles(&self) -> i32 {
+        unsafe { (*self.joint).numParticles }
+    }
+
+    /// Joint shape matching group translations (vec3s)
+    #[inline]
+    pub fn shape_translations(&self) -> [f32; 3] {
+        unsafe { (*self.joint).shapeTranslations }
+    }
+    /// Joint shape matching group rotations (quaternions)
+    #[inline]
+    pub fn shape_rotations(&self) -> [f32; 4] {
+        unsafe { (*self.joint).shapeRotations }
+    }
+
+    /// Joint stiffness
+    #[inline]
+    pub fn stiffness(&self) -> f32 {
+        unsafe { (*self.joint).stiffness }
+    }
+
+    /// Joint status flag
+    #[inline]
+    pub fn initialized(&self) -> bool {
+        unsafe { (*self.joint).initialized }
+    }
+}
+
+impl Drop for SoftJoint {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { NvFlexExtDestroySoftJoint(self.container, self.joint) }
+    }
+}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Send for SoftJoint {}
+
+#[cfg(feature = "unsafe_send_sync")]
+unsafe impl Sync for SoftJoint {}

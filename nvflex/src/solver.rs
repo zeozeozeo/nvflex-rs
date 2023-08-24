@@ -568,8 +568,8 @@ impl Solver {
             NvFlexSetDynamicTriangles(
                 self.solver,
                 indices.buf,
-                if normals.is_some() {
-                    normals.unwrap_unchecked().buf
+                if let Some(normals) = normals {
+                    normals.buf
                 } else {
                     std::ptr::null_mut()
                 },
@@ -595,13 +595,13 @@ impl Solver {
         unsafe {
             NvFlexGetDynamicTriangles(
                 self.solver,
-                if indices.is_some() {
-                    indices.unwrap_unchecked().buf
+                if let Some(indices) = indices {
+                    indices.buf
                 } else {
                     std::ptr::null_mut()
                 },
-                if normals.is_some() {
-                    normals.unwrap_unchecked().buf
+                if let Some(normals) = normals {
+                    normals.buf
                 } else {
                     std::ptr::null_mut()
                 },
@@ -657,8 +657,8 @@ impl Solver {
             NvFlexGetDensities(
                 self.solver,
                 densities.buf,
-                if desc.is_some() {
-                    &desc.unwrap_unchecked() as *const _ as *const _
+                if let Some(desc) = desc {
+                    &desc as *const _ as *const _
                 } else {
                     std::ptr::null()
                 },
@@ -692,8 +692,8 @@ impl Solver {
                 q1.buf,
                 q2.buf,
                 q3.buf,
-                if desc.is_some() {
-                    &desc.unwrap_unchecked() as *const _ as *const _
+                if let Some(desc) = desc {
+                    &desc as *const _ as *const _
                 } else {
                     std::ptr::null()
                 },
@@ -843,18 +843,18 @@ impl Solver {
         unsafe {
             NvFlexGetDeviceLatency(
                 self.solver,
-                if begin.is_some() {
-                    begin.unwrap_unchecked() as *mut _
+                if let Some(begin) = begin {
+                    begin as *mut _
                 } else {
                     std::ptr::null_mut()
                 },
-                if end.is_some() {
-                    end.unwrap_unchecked() as *mut _
+                if let Some(end) = end {
+                    end as *mut _
                 } else {
                     std::ptr::null_mut()
                 },
-                if frequency.is_some() {
-                    frequency.unwrap_unchecked() as *mut _
+                if let Some(frequency) = frequency {
+                    frequency as *mut _
                 } else {
                     std::ptr::null_mut()
                 },
