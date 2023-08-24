@@ -1,10 +1,7 @@
 //! This file is only is only included if the `ext` feature is enabled.
 
-use std::ffi::c_void;
-
-use nvflex_sys::*;
-
 use crate::{Library, Solver};
+use nvflex_sys::*;
 
 /// Helper struct for storing the state of a moving frame, see NvFlexExtMovingFrameInit()
 #[derive(Debug, Clone, Copy, Default)]
