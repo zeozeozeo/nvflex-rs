@@ -9,7 +9,7 @@ pub struct FlexResource {
 
 impl Default for FlexResource {
     fn default() -> Self {
-        let lib = Library::init(None, None);
+        let lib = Library::init(None, None).expect("failed to initialize FleX");
         Self {
             lib: lib.clone(),
             solver: Solver::create(lib, &SolverDesc::default()),
@@ -33,7 +33,9 @@ impl Plugin for FlexPlugin {
     }
 }
 
-pub fn tick_physics(_world: &mut World) {
-    // let resource = world.resource::<FlexResource>();
-    // resource.solver.update(world.time, substeps, enable_timers)
+pub fn tick_physics(world: &mut World) {
+    let resource = world.resource::<FlexResource>();
+    let time = world.resource::<Time>();
+
+    resource.solver.update(time.delta_seconds(), 2, false);
 }

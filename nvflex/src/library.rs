@@ -3,7 +3,8 @@ use std::ffi::c_void;
 use nvflex_sys::*;
 
 use crate::{
-    rstr, ConvexMeshId, DistanceFieldId, ErrorCallback, InitDesc, Solver, TriangleMeshId, VERSION,
+    rstr, ConvexMeshId, DistanceFieldId, ErrorCallback, InitDesc, Solver, SolverDesc,
+    TriangleMeshId, VERSION,
 };
 
 /// Opaque type representing a library that can create FlexSolvers, FlexTriangleMeshes, and NvFlexBuffers
@@ -27,18 +28,21 @@ impl Library {
     ///
     /// A library instance that can be used to allocate shared object such as triangle meshes, buffers, etc
     #[inline]
-    pub fn init(error_func: ErrorCallback, desc: Option<InitDesc>) -> Self {
+    pub fn init(error_func: ErrorCallback, desc: Option<InitDesc>) -> Option<Self> {
         unsafe {
-            Self {
-                lib: NvFlexInit(
-                    VERSION as _,
-                    error_func,
-                    if let Some(desc) = desc {
-                        std::mem::transmute(&desc)
-                    } else {
-                        std::ptr::null_mut()
-                    },
-                ),
+            let lib = NvFlexInit(
+                VERSION as _,
+                error_func,
+                if let Some(desc) = desc {
+                    std::mem::transmute(&desc)
+                } else {
+                    std::ptr::null_mut()
+                },
+            );
+            if lib.is_null() {
+                None
+            } else {
+                Some(Self { lib })
             }
         }
     }
@@ -171,6 +175,12 @@ impl Library {
     #[inline]
     pub fn get_data_aftermath(&self, p_data_out: *mut c_void, p_status_out: *mut c_void) {
         unsafe { NvFlexGetDataAftermath(self.lib, p_data_out, p_status_out) };
+    }
+
+    /// Shorthand for `Solver::create(lib, desc)`
+    #[inline]
+    pub fn create_solver(self, desc: &SolverDesc) -> Solver {
+        Solver::create(self, desc)
     }
 }
 

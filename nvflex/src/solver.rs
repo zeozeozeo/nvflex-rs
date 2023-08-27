@@ -936,10 +936,15 @@ impl Solver {
     ) {
         unsafe { NvFlexCopyDeviceToHost(self.solver, p_device.buf, p_host, size, stride) };
     }
-
-    // TODO: add other debug methods
 }
 
+// FIXME: If you uncomment this to destroy the solver when it is dropped, the program will crash
+// if Library is dropped first. We somehow need to make the Solver aware that the Library is destroyed
+// and it shouldn't call NvFlexDestroySolver() here if NvFlexShutdown() already destroyed it.
+//
+// This means that right now, if you create a solver, it will only be destroyed when Library goes
+// out of scope.
+/*
 impl Drop for Solver {
     #[inline]
     fn drop(&mut self) {
@@ -948,6 +953,7 @@ impl Drop for Solver {
         }
     }
 }
+*/
 
 #[cfg(feature = "unsafe_send_sync")]
 unsafe impl Send for Solver {}

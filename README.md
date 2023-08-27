@@ -29,6 +29,13 @@ To enable NVIDIA FleX extensions (NvFlexExt), enable the `ext` feature.
 * On Linux: only CUDA is supported
 * On Android: only CUDA is supported (you need a Tegra GPU)
 
+## Fixme
+We somehow need to make the `Solver` aware that the `Library` is destroyed
+and it shouldn't call `NvFlexDestroySolver()` when it's dropped if `NvFlexShutdown()` already destroyed it.
+
+This means that right now, if you create a solver, it will only be destroyed when `Library` goes
+out of scope.
+
 ## The `nvflex-sys` crate
 
 `nvflex-sys` provides raw NVIDIA FleX bindings for Rust, generated with [bindgen](https://github.com/rust-lang/rust-bindgen).

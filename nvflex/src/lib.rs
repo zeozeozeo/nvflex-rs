@@ -34,3 +34,19 @@ pub fn make_phase_with_channels(group: i32, particle_flags: i32, shape_channels:
 pub fn make_phase(group: i32, particle_flags: i32) -> i32 {
     nvflex_sys::NvFlexMakePhase(group, particle_flags)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_library() {
+        let _ = Library::init(None, None).unwrap();
+    }
+
+    #[test]
+    fn library_with_solver() {
+        let lib = Library::init(None, None).unwrap();
+        let _ = Solver::create(lib, &SolverDesc::default());
+    }
+}

@@ -1,5 +1,5 @@
 [package]
-name = "bevy-demo"
+name = "demo"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.11.2"
+bevy-flex-plugin = { path = "../../" }
+bevy_panorbit_camera = "0.8.0"

@@ -354,6 +354,7 @@ pub struct SolverDesc {
 }
 
 impl Default for SolverDesc {
+    /// Default [`SolverDesc`] values (set by [`NvFlexSetSolverDescDefaults()`])
     #[inline]
     fn default() -> Self {
         unsafe {

@@ -1,3 +1,3 @@
 [workspace]
-members = ["nvflex", "nvflex-sys", "bevy-flex-plugin", "nvflex/examples/bevy-demo"]
+members = ["nvflex", "nvflex-sys", "bevy-flex-plugin", "bevy-flex-plugin/examples/demo"]
 resolver = "2"
