@@ -57,7 +57,7 @@ impl MovingFrame {
     ///
     /// The [`MovingFrame`] struct
     #[inline]
-    pub fn init(world_translation: [f32; 3], world_rotation: [f32; 4]) -> Self {
+    pub fn new(world_translation: [f32; 3], world_rotation: [f32; 4]) -> Self {
         unsafe {
             let mut frame = MovingFrame::default();
             NvFlexExtMovingFrameInit(
@@ -646,7 +646,7 @@ impl Container {
     ///
     /// A new container
     #[inline]
-    pub fn create(lib: Library, solver: &Solver, max_particles: i32) -> Self {
+    pub fn new(lib: Library, solver: &Solver, max_particles: i32) -> Self {
         unsafe {
             Self {
                 container: NvFlexExtCreateContainer(lib.lib, solver.solver, max_particles),
@@ -827,7 +827,7 @@ impl Instance {
     ///
     /// The instance of the asset
     #[inline]
-    pub fn create(
+    pub fn new(
         container: &Container,
         particle_data: &mut ParticleData,
         asset: &Asset,
@@ -917,7 +917,7 @@ impl ForceFieldCallback {
     ///
     /// A callback structure
     #[inline]
-    pub fn create(&self, solver: &Solver) -> Self {
+    pub fn new(&self, solver: &Solver) -> Self {
         unsafe {
             Self {
                 callback: NvFlexExtCreateForceFieldCallback(solver.solver),
@@ -957,7 +957,7 @@ unsafe impl Sync for ForceFieldCallback {}
 
 /// Represents a soft joint with a radius overlapping different flex objects
 ///
-/// Each soft joint can be spawned into a container using [`SoftJoint::create()`]
+/// Each soft joint can be spawned into a container using [`SoftJoint::new()`]
 #[derive(Debug, Clone)]
 pub struct SoftJoint {
     pub(crate) container: *mut NvFlexExtContainer,
@@ -979,7 +979,7 @@ impl SoftJoint {
     ///
     /// A soft joint instance
     #[inline]
-    pub fn create(
+    pub fn new(
         container: &Container,
         particle_indices: &[i32],
         particle_local_positions: &[f32],

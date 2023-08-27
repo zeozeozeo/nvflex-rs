@@ -41,12 +41,12 @@ mod tests {
 
     #[test]
     fn init_library() {
-        let _ = Library::init(None, None).unwrap();
+        let _ = Library::new(None, None).unwrap();
     }
 
     #[test]
     fn library_with_solver() {
-        let lib = Library::init(None, None).unwrap();
-        let _ = Solver::create(lib, &SolverDesc::default());
+        let lib = Library::new(None, None).unwrap();
+        let _ = Solver::new(lib, &SolverDesc::default());
     }
 }

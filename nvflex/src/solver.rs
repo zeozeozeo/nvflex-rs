@@ -47,7 +47,7 @@ impl Solver {
     /// * `lib` - The library instance to use
     /// * `desc` - Reference to a solver description structure used to create the solver
     #[inline]
-    pub fn create(lib: Library, desc: &SolverDesc) -> Self {
+    pub fn new(lib: Library, desc: &SolverDesc) -> Self {
         unsafe {
             Self {
                 solver: NvFlexCreateSolver(lib.lib, desc as *const _ as *const _),

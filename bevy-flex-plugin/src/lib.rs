@@ -9,10 +9,10 @@ pub struct FlexResource {
 
 impl Default for FlexResource {
     fn default() -> Self {
-        let lib = Library::init(None, None).expect("failed to initialize FleX");
+        let lib = Library::new(None, None).expect("failed to initialize FleX");
         Self {
             lib: lib.clone(),
-            solver: Solver::create(lib, &SolverDesc::default()),
+            solver: Solver::new(lib, &SolverDesc::default()),
         }
     }
 }

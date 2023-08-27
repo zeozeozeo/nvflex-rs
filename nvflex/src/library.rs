@@ -28,7 +28,7 @@ impl Library {
     ///
     /// A library instance that can be used to allocate shared object such as triangle meshes, buffers, etc
     #[inline]
-    pub fn init(error_func: ErrorCallback, desc: Option<InitDesc>) -> Option<Self> {
+    pub fn new(error_func: ErrorCallback, desc: Option<InitDesc>) -> Option<Self> {
         unsafe {
             let lib = NvFlexInit(
                 VERSION as _,
@@ -177,10 +177,10 @@ impl Library {
         unsafe { NvFlexGetDataAftermath(self.lib, p_data_out, p_status_out) };
     }
 
-    /// Shorthand for `Solver::create(lib, desc)`
+    /// Shorthand for `Solver::new(lib, desc)`
     #[inline]
-    pub fn create_solver(self, desc: &SolverDesc) -> Solver {
-        Solver::create(self, desc)
+    pub fn new_solver(self, desc: &SolverDesc) -> Solver {
+        Solver::new(self, desc)
     }
 }
 
