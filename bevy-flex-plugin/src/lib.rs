@@ -4,16 +4,13 @@ use nvflex::{Library, Solver, SolverDesc};
 #[derive(Resource)]
 pub struct FlexResource {
     pub lib: Library,
-    pub solver: Solver,
+    pub solver: Option<Solver>,
 }
 
 impl Default for FlexResource {
     fn default() -> Self {
         let lib = Library::new(None, None).expect("failed to initialize FleX");
-        Self {
-            lib: lib.clone(),
-            solver: Solver::new(lib, &SolverDesc::default()),
-        }
+        Self { lib, solver: None }
     }
 }
 
@@ -37,5 +34,5 @@ pub fn tick_physics(world: &mut World) {
     let resource = world.resource::<FlexResource>();
     let time = world.resource::<Time>();
 
-    resource.solver.update(time.delta_seconds(), 2, false);
+    // resource.solver.update(time.delta_seconds(), 2, false);
 }

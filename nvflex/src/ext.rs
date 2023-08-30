@@ -164,7 +164,7 @@ pub fn create_welded_mesh_indices(
 
 /// Represents a group of particles and constraints, each asset
 /// can be instanced into a container using NvFlexExtCreateInstance()
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Asset {
     pub(crate) asset: *mut NvFlexExtAsset,
     pub(crate) is_tearing_cloth: bool,
@@ -596,7 +596,7 @@ pub fn create_soft_mesh_skinning(
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 #[repr(C)]
 pub struct ShapeData {
     /// Receives a pointer to the array quaternion rotation data in `[x, y, z, w]` format
@@ -607,7 +607,7 @@ pub struct ShapeData {
     pub n: i32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 #[repr(C)]
 pub struct ParticleData {
     /// Receives a pointer to the particle position / mass data
@@ -628,7 +628,7 @@ pub struct ParticleData {
 }
 
 /// Opaque type representing a simulation
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Container {
     pub(crate) container: *mut NvFlexExtContainer,
 }
@@ -801,7 +801,7 @@ unsafe impl Send for Container {}
 unsafe impl Sync for Container {}
 
 /// Represents an instance of a [`Asset`] in a container
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Instance {
     pub(crate) container: *mut NvFlexExtContainer,
     pub(crate) instance: *mut NvFlexExtInstance,
@@ -900,7 +900,7 @@ pub struct ForceField {
 
 /// Opaque type representing a force field callback structure that ecapsulates
 /// the force field kernels and associated data applied as a callback during the Flex update
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ForceFieldCallback {
     callback: *mut NvFlexExtForceFieldCallback,
 }
@@ -958,7 +958,7 @@ unsafe impl Sync for ForceFieldCallback {}
 /// Represents a soft joint with a radius overlapping different flex objects
 ///
 /// Each soft joint can be spawned into a container using [`SoftJoint::new()`]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SoftJoint {
     pub(crate) container: *mut NvFlexExtContainer,
     pub(crate) joint: *mut NvFlexExtSoftJoint,

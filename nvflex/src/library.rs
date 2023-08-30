@@ -8,8 +8,9 @@ use crate::{
 };
 
 /// Opaque type representing a library that can create FlexSolvers, FlexTriangleMeshes, and NvFlexBuffers
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Library {
+    /// Pointer to the underlying [`NvFlexLibrary`]. This should never escape from the struct.
     pub(crate) lib: *mut NvFlexLibrary,
 }
 

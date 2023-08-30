@@ -55,6 +55,7 @@ impl Solver {
         }
     }
 
+    /*
     /// Return the library associated with a solver
     ///
     /// # Returns
@@ -68,6 +69,7 @@ impl Solver {
             }
         }
     }
+    */
 
     /// Return the solver desc that was used to create a solver
     #[inline]
